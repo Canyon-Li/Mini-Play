@@ -60,4 +60,4 @@ python .../render.py markdown input.yaml --out path/to/output.md
 python ../mini-play/schema.py plays/{name}.yaml
 ```
 
-成功输出 `OK: {title} ({N} acts, {M} characters)`，失败输出 `INVALID: {错误详情}`。
+成功输出 `OK: {title} ({N} acts, {M} characters)`，失败输出 `INVALID: {错误详情}`。校验会顺带跑软 lint（裸登场 / 独白幕 / 谢幕表覆盖 / thesis 长度），警告以 `WARN:` 行输出、不影响退出码；加 `--strict` 可让警告导致非零退出（CI 用）。渲染时同样会在 stderr 打印这些 WARN。

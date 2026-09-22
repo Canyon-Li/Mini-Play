@@ -1,9 +1,10 @@
 """Mini-play DSL schema and validator.
 
 Defines the pydantic models for the mini-play YAML DSL and provides a CLI
-entry point for standalone validation:
+entry point for standalone validation + soft lint:
 
-    python schema.py plays/<name>.yaml
+    python schema.py plays/<name>.yaml           # validate, then lint (WARN lines)
+    python schema.py plays/<name>.yaml --strict  # lint warnings cause exit 1
 
 The schema is the single source of truth for what a play looks like.
 Renderers consume validated Play objects, never raw YAML.
@@ -11,6 +12,7 @@ Renderers consume validated Play objects, never raw YAML.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from enum import Enum
 from pathlib import Path
@@ -190,17 +192,95 @@ def load_play(path: str | Path) -> Play:
     return Play.model_validate(raw)
 
 
+MONOLOGUE_LIMIT = 4  # consecutive speaker beats by the same character in one act
+THESIS_LIMIT = 100  # characters
+
+
+def lint_play(play: Play) -> list[str]:
+    """Check the soft lint rules from SKILL.md; return human-readable warnings."""
+    warnings: list[str] = []
+
+    # Map every speakable name (canonical or alias) back to its character.
+    alias_to_char: dict[str, Character] = {}
+    for ch in play.characters:
+        alias_to_char[ch.name] = ch
+        for alias in ch.aliases:
+            alias_to_char[alias] = ch
+
+    # speaking beats per canonical character name
+    counts: dict[str, int] = {ch.name: 0 for ch in play.characters}
+    for act in play.acts:
+        for beat in act.beats:
+            who = getattr(beat, "who", None)
+            if who is not None and who in alias_to_char:
+                counts[alias_to_char[who].name] += 1
+
+    # rule 1: no character defined but never speaking
+    for ch in play.characters:
+        if counts[ch.name] == 0:
+            warnings.append(f"角色「{ch.name}」定义了但从未发言（裸登场）")
+
+    # rule 2: no monologue run of MONOLOGUE_LIMIT+ consecutive speaker beats in one act
+    for act in play.acts:
+        current, run = None, 0
+        for beat in act.beats:
+            who = getattr(beat, "who", None)
+            if who is None or who not in alias_to_char:
+                # a non-speaker beat (stage_direction / aside / code / transition)
+                # breaks the run, same as a different speaker
+                current, run = None, 0
+                continue
+            canon = alias_to_char[who].name
+            if canon == current:
+                run += 1
+            else:
+                current, run = canon, 1
+            if run >= MONOLOGUE_LIMIT:
+                warnings.append(
+                    f"幕「{act.title}」：{canon} 连续独白 {run} 条"
+                    f"（≥{MONOLOGUE_LIMIT}，建议拆成对话或插入舞台说明）"
+                )
+                current, run = None, 0
+
+    # rule 3: closing table covers every character that spoke.
+    # Only applies when the table is a roles table (first header mentions 角色);
+    # a play may legitimately close with a different table shape (e.g. steps).
+    table = play.closing.table
+    if table is not None and table.headers and "角色" in table.headers[0]:
+        listed: set[str] = set()
+        for row in table.rows:
+            if row:
+                cell = row[0]
+                listed.add(alias_to_char[cell].name if cell in alias_to_char else cell)
+        missing = [ch.name for ch in play.characters if counts[ch.name] > 0 and ch.name not in listed]
+        if missing:
+            warnings.append("谢幕表未覆盖登场角色：" + "、".join(missing))
+
+    # rule 4: thesis length
+    if len(play.closing.thesis) > THESIS_LIMIT:
+        warnings.append(f"thesis 长度 {len(play.closing.thesis)} 字（建议 ≤ {THESIS_LIMIT}）")
+
+    return warnings
+
+
 def main(argv: list[str] | None = None) -> int:
-    args = argv if argv is not None else sys.argv[1:]
-    if not args:
-        print("usage: python schema.py <play.yaml>", file=sys.stderr)
-        return 2
+    parser = argparse.ArgumentParser(description="Validate and lint a mini-play DSL file.")
+    parser.add_argument("play", help="path to .yaml play file")
+    parser.add_argument("--strict", action="store_true", help="exit non-zero on lint warnings")
+    args = parser.parse_args(argv if argv is not None else sys.argv[1:])
+
     try:
-        play = load_play(args[0])
+        play = load_play(args.play)
     except Exception as e:
         print(f"INVALID: {e}", file=sys.stderr)
         return 1
     print(f"OK: {play.title} ({len(play.acts)} acts, {len(play.characters)} characters)")
+    warnings = lint_play(play)
+    for w in warnings:
+        print(f"WARN: {w}")
+    if warnings and args.strict:
+        print(f"LINT FAILED: {len(warnings)} warning(s)", file=sys.stderr)
+        return 1
     return 0
 
 

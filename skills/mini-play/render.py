@@ -20,7 +20,7 @@ from jinja2 import Environment, FileSystemLoader
 HERE = Path(__file__).parent
 TEMPLATES = HERE / "templates"
 
-from schema import load_play
+from schema import lint_play, load_play
 
 
 def _slugify(title: str) -> str:
@@ -67,6 +67,8 @@ def _appearances_map(play) -> dict[str, list[str]]:
 
 def render(play_path: str | Path, fmt: str, out_path: str | Path | None = None) -> Path:
     play = load_play(play_path)
+    for w in lint_play(play):
+        print(f"WARN: {w}", file=sys.stderr)
     env = _build_env(fmt)
     template_name = {"markdown": "markdown.j2", "html": "html.j2"}.get(fmt)
     if template_name is None:

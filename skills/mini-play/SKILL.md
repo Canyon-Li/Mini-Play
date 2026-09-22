@@ -80,7 +80,7 @@ render_meta:                            # 可选，渲染器专属配置
 - `acts` / `characters` 至少 1 项；每 act 的 `beats` 至少 1 项
 - 不允许多余字段（防 typo）
 
-**软 lint**（产出后请你在思考里自检）：
+**软 lint**（机器检查，规则已实现在 schema.py 的 `lint_play()`）：
 - 每个角色至少发言 1 次（不要让某角色"裸登场"然后消失）
 - 不允许"独白幕"——一幕里同一角色连续 4 条以上独白（拆成对话或加 stage_direction）
 - 谢幕表 `rows` 应覆盖所有登场角色
@@ -93,7 +93,7 @@ render_meta:                            # 可选，渲染器专属配置
 1. **先在思考里列角色档案**——哪些组件/人物/系统要登场，每个角色的 `persona` 是什么
 2. **草拟分幕大纲**——按"问题出现 → 逐步解决 → 最终分工"三段式切 N 幕
 3. **输出完整 YAML**——按 schema 填充所有字段，台词用 YAML 块标量（`|` 或 `>-`）保留多行
-4. **自检 lint 软规则**——扫一遍：有没有角色裸登场？有没有独白幕？thesis 长度？
+4. **跑机器 lint**——执行 `python schema.py {保存的 yaml 路径}`（schema.py 与本 SKILL.md 同目录），把输出的每条 `WARN:` 修掉后重新校验，直到零 WARN
 5. **保存到** 用户当前工作目录下的 `plays/{slug}.yaml`（没有则创建。剧本属于用户项目，不要写进 skill 安装目录——那里只放本 skill 自带的示例剧本）
 6. **告诉用户文件路径**，并提示：调用 `/mini-play-render markdown {path}` 或 `/mini-play-render html {path}` 来生成最终产物
 
