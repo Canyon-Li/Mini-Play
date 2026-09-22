@@ -17,10 +17,10 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+from schema import lint_play, load_play
+
 HERE = Path(__file__).parent
 TEMPLATES = HERE / "templates"
-
-from schema import lint_play, load_play
 
 
 def _slugify(title: str) -> str:
@@ -44,25 +44,7 @@ def _build_env(fmt: str) -> Environment:
         return (s or "").rstrip()
 
     env.filters["trim_end"] = _trim_end
-    env.filters["rstrip"] = _trim_end
     return env
-
-
-def _appearances_map(play) -> dict[str, list[str]]:
-    """Map each character name to the list of act titles where they speak."""
-    result: dict[str, list[str]] = {ch.name: [] for ch in play.characters}
-    for ch in play.characters:
-        for alias in ch.aliases:
-            result.setdefault(alias, [])
-    for act in play.acts:
-        speakers_in_act: set[str] = set()
-        for beat in act.beats:
-            who = getattr(beat, "who", None)
-            if who is not None:
-                speakers_in_act.add(who)
-        for who in speakers_in_act:
-            result.setdefault(who, []).append(act.title)
-    return result
 
 
 def render(play_path: str | Path, fmt: str, out_path: str | Path | None = None) -> Path:
@@ -75,7 +57,7 @@ def render(play_path: str | Path, fmt: str, out_path: str | Path | None = None) 
         raise ValueError(f"unsupported format: {fmt} (expected markdown or html)")
     template = env.get_template(template_name)
 
-    extra = {"appearances": _appearances_map(play)}
+    extra = {"appearances": play.character_appearances()}
     if play.closing.table:
         headers = play.closing.table.headers
         extra["table_header"] = "| " + " | ".join(headers) + " |"

@@ -19,10 +19,7 @@ from pathlib import Path
 from typing import Literal, Union
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
-
-HERE = Path(__file__).parent
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Emotion(str, Enum):
@@ -108,7 +105,7 @@ class Act(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str
     scene: str | None = None
-    beats: list[Beat] = Field(default_factory=list)
+    beats: list[Beat] = Field(min_length=1)
 
 
 class ClosingTable(BaseModel):
@@ -143,14 +140,6 @@ class Play(BaseModel):
     closing: Closing
     render_meta: RenderMeta = Field(default_factory=RenderMeta)
 
-    @field_validator("acts")
-    @classmethod
-    def _acts_non_empty_beats(cls, v: list[Act]) -> list[Act]:
-        for act in v:
-            if not act.beats:
-                raise ValueError(f"act '{act.title}' has no beats")
-        return v
-
     @model_validator(mode="after")
     def _check_speaker_references(self) -> Play:
         names: set[str] = set()
@@ -167,20 +156,31 @@ class Play(BaseModel):
                     )
         return self
 
-    def speaker_appearances(self) -> dict[str, list[tuple[str, int]]]:
-        """For each character name, list (act_title, count) of speaking beats."""
-        result: dict[str, list[tuple[str, int]]] = {ch.name: [] for ch in self.characters}
+    def alias_to_character(self) -> dict[str, Character]:
+        """Map every speakable name (canonical or alias) to its character."""
+        mapping: dict[str, Character] = {}
         for ch in self.characters:
+            mapping[ch.name] = ch
             for alias in ch.aliases:
-                result.setdefault(alias, [])
+                mapping[alias] = ch
+        return mapping
+
+    def character_appearances(self) -> dict[str, list[str]]:
+        """For each character (canonical name), the act titles where they speak.
+
+        Beats addressed to an alias count toward the character, so HTML
+        character cards never miss acts spoken under a nickname.
+        """
+        mapping = self.alias_to_character()
+        result: dict[str, list[str]] = {ch.name: [] for ch in self.characters}
         for act in self.acts:
-            local: dict[str, int] = {}
+            speakers: set[str] = set()
             for beat in act.beats:
                 who = getattr(beat, "who", None)
-                if who is not None:
-                    local[who] = local.get(who, 0) + 1
-            for who, count in local.items():
-                result.setdefault(who, []).append((act.title, count))
+                if who is not None and who in mapping:
+                    speakers.add(mapping[who].name)
+            for name in speakers:
+                result[name].append(act.title)
         return result
 
 
@@ -199,25 +199,12 @@ THESIS_LIMIT = 100  # characters
 def lint_play(play: Play) -> list[str]:
     """Check the soft lint rules from SKILL.md; return human-readable warnings."""
     warnings: list[str] = []
-
-    # Map every speakable name (canonical or alias) back to its character.
-    alias_to_char: dict[str, Character] = {}
-    for ch in play.characters:
-        alias_to_char[ch.name] = ch
-        for alias in ch.aliases:
-            alias_to_char[alias] = ch
-
-    # speaking beats per canonical character name
-    counts: dict[str, int] = {ch.name: 0 for ch in play.characters}
-    for act in play.acts:
-        for beat in act.beats:
-            who = getattr(beat, "who", None)
-            if who is not None and who in alias_to_char:
-                counts[alias_to_char[who].name] += 1
+    alias_to_char = play.alias_to_character()
+    appearances = play.character_appearances()
 
     # rule 1: no character defined but never speaking
     for ch in play.characters:
-        if counts[ch.name] == 0:
+        if not appearances[ch.name]:
             warnings.append(f"角色「{ch.name}」定义了但从未发言（裸登场）")
 
     # rule 2: no monologue run of MONOLOGUE_LIMIT+ consecutive speaker beats in one act
@@ -252,7 +239,7 @@ def lint_play(play: Play) -> list[str]:
             if row:
                 cell = row[0]
                 listed.add(alias_to_char[cell].name if cell in alias_to_char else cell)
-        missing = [ch.name for ch in play.characters if counts[ch.name] > 0 and ch.name not in listed]
+        missing = [ch.name for ch in play.characters if appearances[ch.name] and ch.name not in listed]
         if missing:
             warnings.append("谢幕表未覆盖登场角色：" + "、".join(missing))
 
