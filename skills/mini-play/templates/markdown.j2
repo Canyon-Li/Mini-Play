@@ -1,0 +1,71 @@
+{# markdown.j2 — render a Play as the original mini-play Markdown style #}
+# {{ play.title }}
+
+> 场景：{{ play.scene }}
+
+---
+
+{% for act in play.acts %}
+## {{ act.title }}
+
+{% if act.scene %}
+> 场景：{{ act.scene }}
+
+{% endif %}
+{% for beat in act.beats %}
+{% if beat.type == "line" %}
+**{{ beat.who }}{% if beat.emotion %}（{{ beat.emotion.value }}）{% endif %}：** {{ beat.text | trim }}
+
+{% elif beat.type == "thought" %}
+
+**（{{ beat.who }} 心里：）**
+
+{{ beat.text | trim }}
+
+{% elif beat.type == "stage_direction" %}
+{% if beat.label %}
+**{{ beat.label }}：** {{ beat.text | trim }}
+
+{% else %}
+*{{ beat.text | trim }}*
+
+{% endif %}
+{% elif beat.type == "aside" %}
+> {% if beat.variant.value == "insight" %}**为什么需要这步：** {% elif beat.variant.value == "warning" %}**注意：** {% endif %}{{ beat.text | trim }}
+
+{% elif beat.type == "code" %}
+{% if beat.title %}**{{ beat.title }}：**
+
+{% endif %}
+```{{ beat.lang }}
+{{ beat.text | trim_end }}
+```
+
+{% elif beat.type == "transition" %}
+
+---
+
+*{{ beat.text | trim }}*
+
+{% endif %}
+{% endfor %}
+{% if not loop.last %}
+
+---
+
+{% endif %}
+{% endfor %}
+
+---
+
+## 谢幕总结
+
+{% if play.closing.table %}
+{{ table_header }}
+{{ table_separator }}
+{% for row in play.closing.table.rows %}
+| {% for cell in row %}{{ cell }}{% if not loop.last %} | {% endif %}{% endfor %} |
+{% endfor %}
+
+{% endif %}
+**{{ play.closing.thesis | trim }}**

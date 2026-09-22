@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ play.title }}</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --fg: #2c2c2c;
+    --muted: #666;
+    --accent: #4a90e2;
+    --aside-bg: #fff8e1;
+    --aside-border: #ffb300;
+    --warn-bg: #fdecea;
+    --warn-border: #e53935;
+    --insight-bg: #e8f5e9;
+    --insight-border: #43a047;
+    --card-bg: #ffffff;
+    --border: #e0e0e0;
+  }
+  body.theme-dark {
+    --bg: #1a1a1a;
+    --fg: #e8e8e8;
+    --muted: #999;
+    --accent: #64b5f6;
+    --aside-bg: #3d3517;
+    --aside-border: #ffb300;
+    --warn-bg: #4a201f;
+    --warn-border: #e53935;
+    --insight-bg: #1f3d22;
+    --insight-border: #43a047;
+    --card-bg: #2a2a2a;
+    --border: #444;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.75;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 32px 24px 96px;
+  }
+  h1 { font-size: 1.8em; border-bottom: 2px solid var(--accent); padding-bottom: 8px; }
+  h2 { font-size: 1.4em; margin-top: 2.5em; color: var(--accent); }
+  .scene { color: var(--muted); font-style: italic; padding: 8px 16px; border-left: 3px solid var(--accent); background: var(--card-bg); }
+  .act-separator { text-align: center; color: var(--muted); margin: 2em 0; letter-spacing: 8px; }
+  .line { margin: 12px 0; padding: 12px 16px; background: var(--card-bg); border-radius: 6px; border-left: 3px solid var(--border); }
+  .line .speaker { font-weight: bold; color: var(--accent); cursor: pointer; }
+  .line .speaker:hover { text-decoration: underline; }
+  .line .emotion { color: var(--muted); font-size: 0.9em; }
+  .line .text { display: block; margin-top: 6px; white-space: pre-wrap; }
+  .thought { color: var(--muted); font-style: italic; padding: 8px 16px; border-left: 3px dashed var(--border); margin: 12px 0; }
+  .stage-direction { color: var(--muted); font-style: italic; padding: 8px 0; }
+  .stage-direction .label { font-weight: bold; color: var(--fg); font-style: normal; }
+  aside.note, aside.warning, aside.insight {
+    display: block; padding: 10px 16px; margin: 12px 0; border-radius: 4px;
+    border-left: 3px solid var(--aside-border); background: var(--aside-bg);
+  }
+  aside.warning { border-left-color: var(--warn-border); background: var(--warn-bg); }
+  aside.insight { border-left-color: var(--insight-border); background: var(--insight-bg); }
+  aside .tag { font-weight: bold; margin-right: 6px; }
+  pre { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; overflow-x: auto; }
+  code { font-family: "JetBrains Mono", Consolas, monospace; }
+  pre code { background: none; padding: 0; }
+  :not(pre) > code { background: var(--card-bg); padding: 2px 6px; border-radius: 3px; font-size: 0.92em; }
+  .code-title { font-weight: bold; margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+  th { background: var(--card-bg); font-weight: bold; }
+  .thesis { font-size: 1.1em; font-weight: bold; margin-top: 16px; padding: 12px 16px; background: var(--card-bg); border-left: 4px solid var(--accent); }
+  .character-card {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+  }
+  .character-card.open { display: flex; }
+  .character-card .panel {
+    background: var(--card-bg); color: var(--fg); padding: 24px;
+    border-radius: 8px; max-width: 480px; width: 90%; box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+  }
+  .character-card h3 { margin: 0 0 4px; color: var(--accent); }
+  .character-card .persona { color: var(--muted); margin: 0 0 16px; font-style: italic; }
+  .character-card dl { margin: 0; }
+  .character-card dt { font-weight: bold; margin-top: 12px; }
+  .character-card dd { margin: 4px 0 0 0; }
+  .character-card .close { margin-top: 20px; padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
+  .character-card .aliases { color: var(--muted); font-size: 0.9em; }
+  details.aside-collapse { margin: 12px 0; }
+  details.aside-collapse > summary { cursor: pointer; font-weight: bold; color: var(--accent); list-style: none; }
+  details.aside-collapse > summary::before { content: "▶ "; font-size: 0.8em; transition: transform 0.2s; display: inline-block; }
+  details.aside-collapse[open] > summary::before { transform: rotate(90deg); }
+  details.aside-collapse[open] > summary { margin-bottom: 8px; }
+  .nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 32px; }
+  .nav a { padding: 4px 10px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; text-decoration: none; color: var(--fg); font-size: 0.9em; }
+  .nav a:hover { border-color: var(--accent); color: var(--accent); }
+</style>
+</head>
+<body class="theme-{{ play.render_meta.html.theme }}">
+
+<h1>{{ play.title }}</h1>
+<div class="scene">场景：{{ play.scene }}</div>
+
+<nav class="nav">
+  {% for act in play.acts %}
+  <a href="#act-{{ loop.index0 }}">{{ act.title }}</a>
+  {% endfor %}
+  <a href="#closing">谢幕</a>
+</nav>
+
+<div id="character-card" class="character-card" onclick="if(event.target===this)closeCard()">
+  <div class="panel">
+    <h3 id="card-name"></h3>
+    <p class="persona" id="card-persona"></p>
+    <dl>
+      <dt class="aliases">别名</dt><dd id="card-aliases"></dd>
+      <dt>背景</dt><dd id="card-backstory"></dd>
+      <dt>登场幕次</dt><dd id="card-appearances"></dd>
+    </dl>
+    <button class="close" onclick="closeCard()">关闭</button>
+  </div>
+</div>
+
+{% for act in play.acts %}
+<h2 id="act-{{ loop.index0 }}">{{ act.title }}</h2>
+{% if act.scene %}<div class="scene">场景：{{ act.scene }}</div>{% endif %}
+
+{% for beat in act.beats %}
+{% if beat.type == "line" %}
+<div class="line">
+  <span class="speaker" onclick="showCard('{{ beat.who }}')">{{ beat.who }}</span>{% if beat.emotion %}<span class="emotion">（{{ beat.emotion.value }}）</span>{% endif %}：
+  <span class="text">{{ beat.text | trim }}</span>
+</div>
+{% elif beat.type == "thought" %}
+<div class="thought">
+  <strong>{{ beat.who }}（心里）：</strong><br>
+  {{ beat.text | trim }}
+</div>
+{% elif beat.type == "stage_direction" %}
+<div class="stage-direction">
+  {% if beat.label %}<span class="label">{{ beat.label }}：</span>{% endif %}{{ beat.text | trim }}
+</div>
+{% elif beat.type == "aside" %}
+{% if play.render_meta.html.aside_collapse_default %}
+<details class="aside-collapse">
+  <summary>{% if beat.variant.value == "insight" %}为什么需要这步{% elif beat.variant.value == "warning" %}注意{% else %}注释{% endif %}</summary>
+  <aside class="{{ beat.variant.value }}">{{ beat.text | trim }}</aside>
+</details>
+{% else %}
+<aside class="{{ beat.variant.value }}">
+  <span class="tag">{% if beat.variant.value == "insight" %}为什么需要这步{% elif beat.variant.value == "warning" %}注意{% else %}注释{% endif %}</span>{{ beat.text | trim }}
+</aside>
+{% endif %}
+{% elif beat.type == "code" %}
+{% if beat.title %}<div class="code-title">{{ beat.title }}</div>{% endif %}
+<pre><code class="language-{{ beat.lang }}">{{ beat.text | trim_end }}</code></pre>
+{% elif beat.type == "transition" %}
+<hr>
+<p class="stage-direction"><em>{{ beat.text | trim }}</em></p>
+{% endif %}
+{% endfor %}
+{% if not loop.last %}
+<div class="act-separator">• • •</div>
+{% endif %}
+{% endfor %}
+
+<h2 id="closing">谢幕总结</h2>
+{% if play.closing.table %}
+<table>
+  <thead><tr>{% for h in play.closing.table.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+  <tbody>
+  {% for row in play.closing.table.rows %}
+  <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+<div class="thesis">{{ play.closing.thesis | trim }}</div>
+
+<script>
+  const characters = {
+    {% for ch in play.characters %}
+    {{ ch.name | tojson }}: {
+      persona: {{ ch.persona | tojson }},
+      aliases: {{ ch.aliases | tojson }},
+      backstory: {{ (ch.backstory or "（无）") | tojson }},
+      appearances: {{ appearances[ch.name] | tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  function showCard(name) {
+    const ch = characters[name];
+    if (!ch) return;
+    document.getElementById('card-name').textContent = name;
+    document.getElementById('card-persona').textContent = ch.persona;
+    document.getElementById('card-aliases').textContent = ch.aliases.length ? ch.aliases.join('、') : '（无）';
+    document.getElementById('card-backstory').textContent = ch.backstory;
+    document.getElementById('card-appearances').textContent = ch.appearances.length ? ch.appearances.join('、') : '（未登场）';
+    document.getElementById('character-card').classList.add('open');
+  }
+  function closeCard() {
+    document.getElementById('character-card').classList.remove('open');
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCard(); });
+</script>
+</body>
+</html>

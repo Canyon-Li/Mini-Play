@@ -1,0 +1,340 @@
+title: LLM 的 12 步"喂饭"之旅
+scene: 一个 AI 问数项目的工作流内部，LLM 在和 LangGraph 对话
+characters:
+  - name: 用户
+    persona: 用自然语言提问的业务方
+    backstory: 不懂数据库细节，只想要答案。
+  - name: LLM
+    persona: 会写 SQL 但上下文窗口有限的 AI
+    aliases: [大模型]
+    backstory: 没有上下文就盲写、上下文太多就消化不良，必须被人"喂"。
+  - name: Graph
+    persona: LangGraph 工作流编排者，把"喂饭"切成 12 步
+    aliases: [LangGraph]
+    backstory: 负责 12 步流水线，从抽关键词一路到执行 SQL。
+acts:
+  - title: 第一幕：LLM 的困境
+    beats:
+      - type: line
+        who: 用户
+        text: 统计华北地区2025年第一季度的GMV
+      - type: line
+        who: Graph
+        text: LLM，用户问你问题了，给个 SQL 吧。
+      - type: line
+        who: LLM
+        emotion: 无奈
+        text: >-
+          ……我连你数据库长什么样都不知道，我写什么 SQL？你让我盲写我只能编——`SELECT * FROM 随便猜的表 WHERE 可能对的字段 = '华北'`，你敢用吗？
+      - type: line
+        who: Graph
+        text: 那你要什么？
+      - type: line
+        who: LLM
+        text: |
+          我需要知道：
+          1. 用户这个问题里哪些词是关键的检索线索？
+          2. 数据库里有哪些表和字段可能和这些问题有关？
+          3. 这些字段里有什么真实值可以做过滤？
+          4. 用户说的"GMV"在数据库里对应什么字段？口径是什么？
+          5. 最终该写什么 SQL？
+
+          你一股脑全给我我也处理不了，我上下文窗口有限，你得一步步喂。
+      - type: line
+        who: Graph
+        text: 懂了。我给你拆成 12 步，一步一步喂你。
+
+  - title: 第二幕：先抽关键词
+    beats:
+      - type: line
+        who: Graph
+        text: 我先帮你从用户问题里抽关键词。你等一下——
+      - type: code
+        lang: python
+        text: |
+          keywords = jieba.analyse.extract_tags("统计华北地区2025年第一季度的GMV", allowPOS=...)
+          # → ["华北", "地区", "GMV", "2025", "第一季度"]
+      - type: line
+        who: Graph
+        text: LLM，这是抽出来的关键词，后面我就按这些词去搜数据了。
+      - type: line
+        who: LLM
+        text: 嗯，"地区"这种词意义不大，但"华北"、"GMV"、"2025"、"第一季度"都有业务含义。拿这些去搜吧。
+      - type: aside
+        variant: insight
+        text: >-
+          用户问题是自然语言，混着"统计""的"这种噪声。不抽关键词直接拿整句话去搜，精确度很差。
+
+  - title: 第三幕：三路并行搜数据
+    beats:
+      - type: line
+        who: Graph
+        text: |
+          关键词有了，我现在三路并发去搜——
+          - recall_column：把关键词扩展成字段语义（"销售额"→"销售金额""GMV"），去 Qdrant 搜向量 → 召回 `fact_order.order_amount`、`fact_order.order_quantity`
+          - recall_value：去 ES 搜"华北"→ 发现它在 `dim_region.province` 字段里，取值为"华北"
+          - recall_metric：扩展成指标语义（"GMV"→"成交总额"），去 Qdrant 搜指标 → 召回 GMV 指标
+      - type: line
+        who: LLM
+        emotion: 焦虑
+        text: 等等，你一次塞给我三堆数据我头大——一堆字段、一堆取值、一堆指标，我怎么知道谁跟谁是一家的？
+      - type: line
+        who: Graph
+        text: 别急，我帮你合并。
+      - type: aside
+        variant: insight
+        text: 不同维度的信息各自存储在不同的引擎（Qdrant 搜语义、ES 搜取值），必须并行搜再合并。串行搜太慢。
+
+  - title: 第四幕：合并成能看懂的样子
+    beats:
+      - type: line
+        who: Graph
+        text: |
+          我现在做 7 件小事——
+          1. 字段去重（多个关键词可能命中同一个字段）
+          2. 指标依赖的字段如果漏了，从元数据库补回来（GMV 依赖 `order_amount`）
+          3. ES 搜到的"华北"这个值，放回 `dim_region.province` 的 examples 里
+          4. 字段按表分组（`fact_order` 下的字段、`dim_region` 下的字段）
+          5. 每张表补齐主外键（JOIN 需要）
+          6. 精简字段，只留 LLM 需要的信息
+          7. 精简指标，同样只留必要信息
+
+          给你看看我合并完的样子：
+      - type: code
+        lang: yaml
+        text: |
+          - name: fact_order
+            role: fact
+            columns:
+              - name: order_amount
+                type: decimal(10,2)
+                role: measure
+                description: 订单金额
+                alias: [销售额, 交易额]
+              - name: region_id
+                role: foreign_key
+              - name: date_id
+                role: foreign_key
+
+          - name: dim_region
+            role: dimension
+            columns:
+              - name: province
+                type: varchar(50)
+                examples: [华北, 华东, 华南]
+                description: 省份
+              - name: region_id
+                role: primary_key
+
+          指标：
+          - name: GMV
+            description: 所有订单的成交金额总和
+            relevant_columns: [fact_order.order_amount]
+      - type: line
+        who: LLM
+        text: 这下我能看懂了——表结构、字段类型、示例值、指标口径一目了然。不过有些表和字段其实用不上，能帮我再筛一下吗？
+      - type: aside
+        variant: insight
+        text: >-
+          三路召回的结果是零散的，不合并 LLM 无法理解。同时要补齐关联信息（主外键、指标依赖字段），否则 LLM 写 JOIN 时缺胳膊少腿。
+
+  - title: 第五幕：缩小范围
+    beats:
+      - type: line
+        who: Graph
+        text: 你来看——
+      - type: code
+        lang: yaml
+        text: |
+          # 这是候选的全部表和字段，你帮我选一下哪些是实际需要的
+      - type: thought
+        who: LLM
+        text: |
+          用户问"华北地区2025年第一季度的GMV"……
+          - 需要 `fact_order`：有 `order_amount`（GMV 的计算字段），通过 `region_id` 连地区表，通过 `date_id` 筛时间
+          - 需要 `dim_region`：有 `province`，用来过滤"华北"
+          - 需要 `dim_date`：有 `year` 和 `quarter`，用来过滤"2025年第一季度"
+          - 不需要 `dim_customer`、`dim_product`、`fact_order.order_quantity` 等
+
+          所以——
+      - type: code
+        lang: json
+        text: |
+          {
+              "fact_order": ["order_amount", "region_id", "date_id"],
+              "dim_region": ["province", "region_id"],
+              "dim_date": ["year", "quarter", "date_id"]
+          }
+      - type: line
+        who: LLM
+        text: 指标只需要 GMV。
+      - type: line
+        who: Graph
+        text: 好，我按你的选择裁掉多余的。
+      - type: aside
+        variant: insight
+        text: 不裁的话，5 张表 30 个字段全塞进 prompt，LLM 容易看花眼选错字段。只留相关的，错误率降低。
+
+  - title: 第六幕：补充额外信息
+    beats:
+      - type: line
+        who: Graph
+        text: LLM，还有些上下文你可能需要——
+      - type: code
+        lang: yaml
+        text: |
+          当前时间：
+            date: 2026-06-26
+            weekday: Friday
+            quarter: Q2
+
+          数据库环境：
+            dialect: mysql
+            version: 8.0.41
+      - type: line
+        who: LLM
+        text: 好。这样我就知道"2025年第一季度"不是"最近三个月"而是具体的时间段，以及 MySQL 8.0 支持什么语法（窗口函数、CTE 等）。
+      - type: aside
+        variant: insight
+        text: |
+          日期信息帮助 LLM 理解相对时间，"本季度""最近 N 天"才能翻译成正确的 SQL。
+          数据库方言和版本影响 SQL 语法——MySQL 和 PostgreSQL 的日期函数不一样。
+
+  - title: 第七幕：生成 SQL
+    beats:
+      - type: line
+        who: Graph
+        text: LLM，所有信息都齐了，写 SQL 吧。
+      - type: line
+        who: LLM
+        emotion: 得意
+        text: 好，看我的——
+      - type: code
+        lang: text
+        title: 上下文
+        text: |
+          表结构：fact_order（order_amount, region_id, date_id）、
+                   dim_region（province, region_id）、
+                   dim_date（year, quarter, date_id）
+          指标：GMV = SUM(fact_order.order_amount)
+          当前时间：2026-06-26
+          数据库：MySQL 8.0
+
+          【用户问题】
+          统计华北地区2025年第一季度的GMV
+      - type: line
+        who: LLM
+        text: 写好了：
+      - type: code
+        lang: sql
+        text: |
+          SELECT SUM(fo.order_amount) AS GMV
+          FROM fact_order fo
+          JOIN dim_region dr ON fo.region_id = dr.region_id
+          JOIN dim_date dd ON fo.date_id = dd.date_id
+          WHERE dr.province = '华北'
+            AND dd.year = 2025
+            AND dd.quarter = 'Q1'
+      - type: line
+        who: Graph
+        text: SQL 拿到了，但我不能直接拿去跑——万一有语法错误呢？
+      - type: aside
+        variant: insight
+        text: LLM 生成 SQL 不是 100% 正确的，需要校验兜底。
+
+  - title: 第八幕：校验和修正
+    beats:
+      - type: line
+        who: Graph
+        text: 我去数仓试一下——
+      - type: code
+        lang: sql
+        text: EXPLAIN SELECT SUM(fo.order_amount) AS GMV ...
+      - type: stage_direction
+        label: 报错
+        text: "❌ Unknown column 'dd.year' in 'field list'"
+      - type: line
+        who: Graph
+        emotion: 困惑
+        text: >-
+          果然有问题。`dim_date` 里没有 `year` 字段？我去查一下元数据……
+          哦，`dim_date` 里只有 `date_id` 一个字段，年、季度都通过日期运算得到，没有单独的 `year` 列。
+      - type: line
+        who: Graph
+        text: LLM，你写的 SQL 报错了。错误信息是 `Unknown column 'dd.year'`。上下文和原来一样，你再看看。
+      - type: line
+        who: LLM
+        emotion: 思考
+        text: >-
+          哦对，我错了。`dim_date` 只有 `date_id`，没有 `year` 和 `quarter`。那我用 `YEAR()` 和 `QUARTER()` 函数吧。
+          修正：
+      - type: code
+        lang: sql
+        text: |
+          SELECT SUM(fo.order_amount) AS GMV
+          FROM fact_order fo
+          JOIN dim_region dr ON fo.region_id = dr.region_id
+          JOIN dim_date dd ON fo.date_id = dd.date_id
+          WHERE dr.province = '华北'
+            AND YEAR(dd.date_id) = 2025
+            AND QUARTER(dd.date_id) = 1
+      - type: aside
+        variant: insight
+        text: LLM 不是数据库，它对字段名的记忆可能不准。EXPLAIN 校验 + 修正循环是最后一道防线。
+
+  - title: 第九幕：执行
+    beats:
+      - type: line
+        who: Graph
+        text: 这次应该没问题了。执行——
+      - type: code
+        lang: text
+        text: |
+          mysql> SELECT SUM(fo.order_amount) AS GMV
+                 FROM fact_order fo
+                 JOIN dim_region dr ON fo.region_id = dr.region_id
+                 JOIN dim_date dd ON fo.date_id = dd.date_id
+                 WHERE dr.province = '华北'
+                   AND YEAR(dd.date_id) = 2025
+                   AND QUARTER(dd.date_id) = 1;
+
+                 +------------+
+                 | GMV        |
+                 +------------+
+                 | 3848572.50 |
+                 +------------+
+      - type: line
+        who: Graph
+        emotion: 得意
+        text: 取到结果了！推送给前端展示。
+
+  - title: 谢幕：为什么要分这么多步？
+    beats:
+      - type: line
+        who: LLM
+        text: 现在你明白了吗？不是 Graph 故意把事情搞复杂——每一步解决我一个特定的痛点：
+      - type: line
+        who: Graph
+        text: 所以我不是在添乱，我是在给你喂饭——每口都切成正好你能吞下的大小。
+      - type: line
+        who: LLM
+        text: 对。没有你，我就会被丢进一个陌生的数据库里盲写 SQL——那和蒙着眼睛开车没区别。
+closing:
+  table:
+    headers: [Graph 的步骤, 解决 LLM 的什么痛点]
+    rows:
+      - [extract_keywords, 自然语言太模糊，需要先提炼检索线索]
+      - [recall_column/value/metric, 我不知道数据库里有什么，需要你帮我搜]
+      - [merge_retrieved_info, 零散的信息我理不清关系，需要你帮我整理好]
+      - [filter_table/metric, 信息太多我处理不了，需要你帮我缩小范围]
+      - [add_extra_context, 我需要知道当前时间、数据库类型才能写对语法]
+      - [generate_sql, 这是我唯一真正"动脑"的步骤]
+      - [validate_sql, 我可能记错字段名，需要你帮我检查]
+      - [correct_sql, 错了你给我报错信息，我改]
+      - [run_sql, 最终你去执行，我只看结果]
+  thesis: >-
+    LLM 不是不能用，是不能裸奔用。把"理解数据库结构"这件难事拆成 12 步流水线，每步只让 LLM 处理它擅长的部分，最终它就只要在最后一幕动一次脑——写 SQL。
+render_meta:
+  html:
+    aside_collapse_default: true
+    theme: light

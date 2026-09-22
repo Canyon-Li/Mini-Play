@@ -1,0 +1,11 @@
+{
+  "name": "mini-play",
+  "displayName": "MiniPlay",
+  "version": "0.1.0",
+  "description": "把复杂的技术概念、架构、流程转化为多人小剧场对话：mini-play skill 产出结构化 YAML 剧本 DSL，mini-play-render skill 渲染成 Markdown / 自包含 HTML。",
+  "author": {
+    "name": "Canyon-Li"
+  },
+  "license": "MIT",
+  "keywords": ["claude-code", "skill", "theater", "dialogue", "technical-writing", "education"]
+}

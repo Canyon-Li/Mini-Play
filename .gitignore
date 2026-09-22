@@ -1,0 +1,10 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# rendered play artifacts (regenerate with render.py)
+skills/mini-play/plays/build/
+
+# OS
+.DS_Store
+Thumbs.db

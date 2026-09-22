@@ -1,0 +1,206 @@
+title: 元数据知识库的诞生
+scene: 一个 AI 项目小组在讨论"怎么让 LLM 知道数据库里有什么"
+characters:
+  - name: 产品经理
+    persona: 提需求的人，关心"用户能不能问到答案"
+    backstory: 不懂技术细节，只想知道 LLM 为什么答不上来。
+  - name: LLM
+    persona: 会写 SQL 但不知道数据库里有什么的 AI
+    aliases: [大模型]
+    backstory: 上下文窗口有限，吃不下整库的原始元数据；擅长语义理解和代码生成。
+  - name: 元数据库
+    persona: 在 MySQL 里存表结构和字段定义的"档案室"
+    aliases: [元数据库（MySQL）, MySQL]
+    backstory: 知道所有表/字段的精确定义，但 LLM 不会直接查它。
+  - name: 元数据知识库
+    persona: 总指挥/总设计师，负责把"档案"加工成"地图"
+    aliases: [元数据知识库（总设计师）, 元数据知识库（总指挥）]
+    backstory: 解决三个核心问题：语义字段、模糊匹配、真实值检索；协调三个索引引擎协作。
+  - name: Qdrant
+    persona: 向量数据库，模糊语义匹配的专家
+    backstory: 把字段名/描述/别名转成向量，按语义相似度召回。
+  - name: ES
+    persona: 全文检索引擎，擅长在真实取值里做精确匹配
+    aliases: [Elasticsearch]
+    backstory: 把维度字段的真实取值建索引，让"华北"能定位到具体字段。
+  - name: 配置
+    persona: meta_config.yaml，定义要索引哪些表/字段/指标
+    aliases: [meta_config.yaml, 配置（meta_config.yaml）]
+    backstory: 决定哪些表/字段/指标会被加工。
+  - name: 用户
+    persona: 用自然语言问数据问题的业务方
+    backstory: 不懂数据库细节，说话模糊但需求清晰。
+acts:
+  - title: 第一幕：没有知识库的时候
+    beats:
+      - type: line
+        who: 产品经理
+        text: 用户想用中文问"华北地区销售额"，LLM 去生成 SQL 查数据库。
+      - type: line
+        who: LLM
+        emotion: 困惑
+        text: 我可以写 SQL，但……你数据库里有什么表？字段叫什么？我啥也不知道啊。
+      - type: line
+        who: 元数据库
+        text: >-
+          我倒是知道。我在 MySQL 里存着完整的表结构和字段定义：`fact_order` 有 `order_amount`、`dim_region` 有 `province`……但 LLM 你又不会直接来查我。
+      - type: line
+        who: LLM
+        text: 对啊，你存你的，我写我的，咱俩连不上。
+      - type: stage_direction
+        label: 问题
+        text: LLM 不知道数据库长什么样，盲写 SQL。
+
+  - title: 第二幕：那直接把表结构塞给 LLM
+    beats:
+      - type: stage_direction
+        label: 方案
+        text: 每次用户提问，把整个数据库的表结构全部塞给 LLM。
+      - type: line
+        who: 元数据库
+        text: 我给你看看我存了啥——
+      - type: code
+        lang: yaml
+        text: |
+          table_info: 5张表
+          column_info: 30个字段
+          metric_info: 2个指标
+          column_metric: 若干关联关系
+          ……
+      - type: line
+        who: LLM
+        emotion: 无奈
+        text: >-
+          停！这些全是 `id`、`name`、`description` 的 ORM 原始数据，我要看的是"这个字段在业务上叫什么"、"字段里有什么值"。而且每次把5张表30个字段全塞给我，我处理不过来。
+      - type: stage_direction
+        label: 问题
+        text: 信息太原始、太多，LLM 消化不了。
+
+  - title: 第三幕：元数据知识库的诞生
+    beats:
+      - type: line
+        who: 元数据知识库
+        text: |
+          我懂了。我们需要解决三个问题：
+          1. LLM 需要的是带语义的字段信息，不是 ORM 原始数据
+          2. 用户的问题是模糊的（"销售额" vs `order_amount`），需要建语义索引
+          3. LLM 写 WHERE 条件时需要知道字段里有啥真实值
+
+          我决定建三套索引配合工作——
+
+  - title: 第四幕：分工
+    beats:
+      - type: line
+        who: 元数据知识库
+        text: >-
+          元数据库，你先打头阵。你把配置里的表结构、字段定义、指标口径存成结构化数据。
+      - type: line
+        who: 元数据库
+        text: >-
+          明白。我把 `table_info`、`column_info`、`metric_info`、`column_metric` 四张表写得清清楚楚。`fact_order.order_amount`，角色是 `measure`，描述是"订单金额"，别名叫"销售额、交易额"。LLM 以后查我能拿到完整的结构化元数据。
+      - type: line
+        who: 元数据知识库
+        text: >-
+          好的。但 LLM 查你的时候是精确匹配——它必须知道 `order_amount` 这个名字才能查到你。可用户说的是"销售额"，不是 `order_amount`，怎么办？
+      - type: line
+        who: Qdrant
+        text: >-
+          我来。你把字段名、字段描述、别名全部给我，我转成向量存起来。用户说"销售额"，我通过向量相似度找到语义上最接近的 `order_amount`。模糊匹配我擅长。
+      - type: line
+        who: 元数据知识库
+        text: 好。字段向量归你。那指标怎么办？用户说"GMV"，但数据库里没有叫 GMV 的字段，它是一个聚合口径。
+      - type: line
+        who: Qdrant
+        text: >-
+          指标也给我。指标名、指标描述、别名我同样转成向量。这样用户说"成交总额"→ 我搜到 GMV 指标 → 指标告诉 LLM"GMV = SUM(order_amount)"。
+      - type: line
+        who: 元数据知识库
+        text: 对了。那字段取值呢？用户说"华北地区"，LLM 需要知道"华北"是 `dim_region.province` 里的一个值，才能写出 `WHERE province = '华北'`。
+      - type: line
+        who: ES
+        text: >-
+          我来。元数据库你告诉我哪些字段需要全文检索（`sync: true` 的维度字段），我去 dw 数仓里把它们的真实取值全捞出来，建全文索引。用户说"华北"，我在索引里一搜，发现它在 `dim_region.province` 字段里出现过，然后告诉 LLM："华北"属于 `province` 字段，你可以写 `WHERE province = '华北'`。
+
+  - title: 第五幕：各就各位
+    beats:
+      - type: line
+        who: 元数据知识库
+        emotion: 兴奋
+        text: 好，全体都有。开始构建——
+      - type: line
+        who: 配置
+        text: 我这里定义了 5 张星型模型的表、30 个字段、2 个指标。开工！
+      - type: line
+        who: 元数据知识库
+        text: 元数据库，你先来。
+      - type: line
+        who: 元数据库
+        text: |
+          - `table_info` ← 5 张表写好
+          - `column_info` ← 30 个字段写好，每个字段的 id、名称、类型、角色、描述、别名都有了
+          - `metric_info` ← GMV 和 AOV 写好，告诉系统它们的计算口径
+      - type: line
+        who: 元数据知识库
+        text: 好。Qdrant，轮到你。
+      - type: line
+        who: Qdrant
+        text: |
+          - 字段集合 `column_info_collection`：
+            - `order_amount`（字段名）
+            - "订单金额"（描述）
+            - "销售额"、"交易额"（别名）→ 每个建一个向量点，payload 都指向同一个字段
+          - 指标集合 `metric_info_collection`：
+            - `GMV`（指标名）
+            - "成交总额"（别名）→ 同理，payload 指向 GMV
+      - type: line
+        who: 元数据知识库
+        text: ES，你殿后。
+      - type: line
+        who: ES
+        text: |
+          - `value_index` 索引建好
+          - 按配置里的 `sync` 标志：
+            - `dim_region.province` → sync: true → 去数仓查 `SELECT DISTINCT province FROM dim_region` → 写入索引
+            - `dim_region.region_name` → sync: true → 同理
+            - `fact_order.order_amount` → sync: false → 跳过，金额不需要全文检索
+
+  - title: 第六幕：问数工作流用起来
+    beats:
+      - type: line
+        who: 用户
+        text: 统计华北地区的销售总额
+      - type: line
+        who: LLM
+        emotion: 兴奋
+        text: |
+          数据来了！
+          - Qdrant 告诉我："销售总额" → 搜到 `order_amount`
+          - ES 告诉我："华北" → 搜到 `dim_region.province` 的取值
+          - 元数据库 MySQL 告诉我：`order_amount` 是 `decimal(10,2)` 类型，属于 `fact_order` 表
+
+          好，我写 SQL：
+      - type: code
+        lang: sql
+        text: |
+          SELECT SUM(order_amount) AS 销售总额
+          FROM fact_order
+          JOIN dim_region ON fact_order.region_id = dim_region.region_id
+          WHERE dim_region.province = '华北'
+      - type: line
+        who: 用户
+        text: ✅ 看到结果了。
+closing:
+  table:
+    headers: [角色, 在构建阶段做的事, 在查询阶段做的事]
+    rows:
+      - [元数据库 MySQL, 存储结构化的表/字段/指标元数据, 运行时补齐主外键、指标依赖字段]
+      - [Qdrant, 字段名/描述/别名、指标名/描述/别名 → 向量点, 用户问问题 → 按语义搜到相关字段和指标]
+      - [ES, 维度字段的真实取值 → 全文索引, 用户问具体值（"华北"）→ 定位到所属字段]
+      - [元数据知识库, 总指挥：配置管理、调用顺序、数据一致性, 离线建好、在线直接用]
+      - [LLM, 不需要参与构建, 接收三路召回结果 → 理解表结构和指标口径 → 生成 SQL]
+  thesis: >-
+    LLM 很强，但不能让它现场猜数据库里有什么。构建阶段提前把数据库的"地图"（元数据）加工成 LLM 能直接用的格式（向量索引 + 全文索引 + 结构化元数据），运行时 LLM 只需查地图，不猜路。
+render_meta:
+  html:
+    aside_collapse_default: true
+    theme: light
