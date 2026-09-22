@@ -25,11 +25,11 @@ pip install -r requirements.txt
 
 ### 方式一：Plugin（推荐）
 
-在 Claude Code 中执行（把 `<github-user>` 换成实际用户名）：
+在 Claude Code 中执行：
 
 ```
-/plugin marketplace add <github-user>/MiniPlay
-/plugin install mini-play@MiniPlay
+/plugin marketplace add Canyon-Li/Mini-Play
+/plugin install mini-play@Mini-Play
 ```
 
 ### 方式二：手动安装
@@ -37,8 +37,8 @@ pip install -r requirements.txt
 把 `skills/` 下的两个目录复制到 `~/.claude/skills/`：
 
 ```bash
-git clone https://github.com/<github-user>/MiniPlay.git
-cp -r MiniPlay/skills/mini-play MiniPlay/skills/mini-play-render ~/.claude/skills/
+git clone https://github.com/Canyon-Li/Mini-Play.git
+cp -r Mini-Play/skills/mini-play Mini-Play/skills/mini-play-render ~/.claude/skills/
 ```
 
 > 两个 skill 需要一起安装：`mini-play-render` 会调用 `mini-play` 目录里的渲染器。
