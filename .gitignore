@@ -2,8 +2,9 @@
 __pycache__/
 *.py[cod]
 
-# rendered play artifacts (regenerate with render.py)
-skills/mini-play/plays/build/
+# rendered play artifacts next to sources (regenerate with render.py)
+skills/mini-play/plays/*.html
+skills/mini-play/plays/*.md
 
 # OS
 .DS_Store

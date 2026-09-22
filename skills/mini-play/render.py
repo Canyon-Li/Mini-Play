@@ -5,7 +5,7 @@ Usage:
     python render.py html plays/<name>.yaml
     python render.py markdown plays/<name>.yaml --out custom.md
 
-Output defaults to plays/build/<slug>.<ext>.
+Output defaults to <play_dir>/<slug>.<ext>, next to the source YAML.
 """
 
 from __future__ import annotations
@@ -19,7 +19,6 @@ from jinja2 import Environment, FileSystemLoader
 
 HERE = Path(__file__).parent
 TEMPLATES = HERE / "templates"
-DEFAULT_OUT = HERE / "plays" / "build"
 
 from schema import load_play
 
@@ -85,7 +84,7 @@ def render(play_path: str | Path, fmt: str, out_path: str | Path | None = None) 
     slug = _slugify(play.title)
     ext = "md" if fmt == "markdown" else "html"
     if out_path is None:
-        out = DEFAULT_OUT / f"{slug}.{ext}"
+        out = Path(play_path).parent / f"{slug}.{ext}"
     else:
         out = Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -97,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Render a mini-play DSL file.")
     parser.add_argument("format", choices=["markdown", "html"], help="output format")
     parser.add_argument("play", help="path to .yaml play file")
-    parser.add_argument("--out", default=None, help="output file path (default: plays/build/<slug>.<ext>)")
+    parser.add_argument("--out", default=None, help="output file path (default: <play_dir>/<slug>.<ext>)")
     args = parser.parse_args(argv if argv is not None else sys.argv[1:])
 
     try:

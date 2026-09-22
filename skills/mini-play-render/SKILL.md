@@ -34,13 +34,13 @@ description: "将 mini-play 产出的 YAML DSL 剧本渲染成最终形态（Mar
    python ../mini-play/render.py {format} "{dsl-path}"
    ```
 3. **处理结果**：
-   - 渲染成功 → 告诉用户输出文件路径（默认在 `plays/build/{slug}.{ext}`）
+   - 渲染成功 → 告诉用户输出文件路径（默认在剧本 YAML 所在目录，文件名 `{slug}.{ext}`）
    - schema 校验失败 → 把 pydantic 错误返回给用户，并建议"用 `/mini-play` 修复 DSL 后重渲"
-   - 渲染失败 → 显示错误信息，常见原因是模板渲染问题，可建议打开 `templates/{format}.j2` 查看
+   - 渲染失败 → 显示错误信息，常见原因是模板渲染问题，可建议打开 `../mini-play/templates/{format}.j2` 查看
 
 ## 输出位置
 
-默认输出到 mini-play skill 目录下的 `plays/build/{slug}.{ext}`（即渲染器所在目录），其中 `slug` 由 `play.title` slugify 而来（去掉特殊字符）。
+默认输出到**剧本 YAML 所在目录**：`{slug}.{ext}`（产物跟源文件放在一起，不写进 skill 安装目录），其中 `slug` 由 `play.title` slugify 而来（去掉特殊字符）。
 
 如需指定输出路径：
 ```

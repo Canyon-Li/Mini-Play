@@ -94,7 +94,7 @@ render_meta:                            # 可选，渲染器专属配置
 2. **草拟分幕大纲**——按"问题出现 → 逐步解决 → 最终分工"三段式切 N 幕
 3. **输出完整 YAML**——按 schema 填充所有字段，台词用 YAML 块标量（`|` 或 `>-`）保留多行
 4. **自检 lint 软规则**——扫一遍：有没有角色裸登场？有没有独白幕？thesis 长度？
-5. **保存到** 本 skill 目录下的 `plays/{slug}.yaml`（即本 SKILL.md 所在目录的 `plays/` 子目录）
+5. **保存到** 用户当前工作目录下的 `plays/{slug}.yaml`（没有则创建。剧本属于用户项目，不要写进 skill 安装目录——那里只放本 skill 自带的示例剧本）
 6. **告诉用户文件路径**，并提示：调用 `/mini-play-render markdown {path}` 或 `/mini-play-render html {path}` 来生成最终产物
 
 ## 文件命名
