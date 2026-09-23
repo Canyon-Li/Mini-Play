@@ -107,6 +107,15 @@ python skills/mini-play/render.py markdown <剧本.yaml>   # 渲染 Markdown
 python skills/mini-play/render.py html <剧本.yaml> --out out/x.html
 ```
 
+## 开发与测试
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+pytest
+```
+
+CI（GitHub Actions）在每次 push / PR 时自动跑同一套测试。
+
 ## License
 
 [MIT](LICENSE)

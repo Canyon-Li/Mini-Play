@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+.pytest_cache/
 
 # rendered play artifacts next to sources (regenerate with render.py)
 skills/mini-play/plays/*.html
