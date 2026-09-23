@@ -1,4 +1,8 @@
-# MiniPlay
+<p align="center">
+  <img src="docs/封面标志.webp" width="180" alt="MiniPlay logo">
+</p>
+
+# MiniPlay 
 
 > 把复杂的技术概念、架构、流程，变成一场人人看得懂的小剧场。
 
