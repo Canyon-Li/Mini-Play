@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>元数据知识库的诞生</title>
+<style>
+  :root{
+    --paper:#f7f1e5; --paper2:#fffaf0; --ink:#282522; --muted:#70695f;
+    --purple:#8e7bb8; --purple2:#e9e1f2; --yellow:#f2d778; --yellow2:#fff2b8;
+    --line:#d8cdbb; --bubble:#ffffff; --codebg:#292722; --codefg:#f8f1df;
+    --hand:"Ma Shan Zheng","Kaiti SC",KaiTi,STKaiti,cursive;
+  }
+  body.theme-dark{
+    --paper:#262019; --paper2:#2d271f; --ink:#eee6d8; --muted:#a89e8d;
+    --purple:#b7a8da; --purple2:#3c3449; --yellow:#d9c069; --yellow2:#453c22;
+    --line:#4a4234; --bubble:#332c23; --codebg:#1c1812;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;color:var(--ink);
+    font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:
+      radial-gradient(circle at 10% 10%,rgba(142,123,184,.08) 0 2px,transparent 3px),
+      radial-gradient(circle at 80% 30%,rgba(242,215,120,.10) 0 2px,transparent 3px),
+      var(--paper);
+    background-size:29px 29px,37px 37px,auto;
+    line-height:1.75;
+  }
+  .wrap{max-width:860px;margin:0 auto;padding:46px 24px 70px}
+
+  .kicker{display:inline-block;background:var(--yellow2);border:1.5px solid var(--ink);
+    padding:3px 12px;border-radius:5px;transform:rotate(-1.5deg);font-size:13px;
+    font-weight:700;box-shadow:2px 2px 0 var(--ink)}
+  h1{font-size:clamp(34px,6vw,54px);line-height:1.15;margin:24px 0 10px;letter-spacing:-1px}
+  .scene{color:var(--muted);font-size:16px;padding:4px 0 16px;
+    border-bottom:1.5px dashed var(--line);margin-bottom:26px}
+
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+  .nav a{font-size:13px;border:1px solid var(--line);border-radius:99px;padding:3px 12px;
+    color:var(--muted);text-decoration:none;background:var(--paper2)}
+  .nav a:hover{border-color:var(--ink);color:var(--ink)}
+
+  .stage{background:var(--paper2);border:2px solid var(--ink);border-radius:25px;
+    box-shadow:9px 10px 0 var(--purple);padding:22px 26px;margin:38px 0;
+    transform:rotate(-.35deg)}
+  section.stage:nth-of-type(even){transform:rotate(.35deg)}
+  .stage-top{display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1.5px dashed var(--line);padding-bottom:12px;margin-bottom:16px}
+  .stage-title{font-weight:800;font-size:18px}
+  .dots{display:flex;gap:5px}
+  .dots i{width:8px;height:8px;border:1.5px solid var(--ink);border-radius:50%}
+  .act-scene{font-size:13px;color:var(--muted);font-style:italic;margin:0 0 10px}
+
+  .line{display:flex;gap:12px;align-items:flex-start;margin:14px 0}
+  .avatar{flex:none;width:36px;height:36px;border:1.5px solid var(--ink);border-radius:50%;
+    display:grid;place-items:center;background:var(--yellow2);font-weight:800;
+    font-size:15px;cursor:pointer;margin-top:5px;transition:.18s}
+  .avatar:hover{background:var(--purple2);transform:rotate(-6deg)}
+  .bubble{background:var(--bubble);border:1.5px solid var(--ink);border-radius:16px 16px 16px 4px;
+    padding:10px 16px;box-shadow:3px 3px 0 rgba(40,37,34,.12);max-width:88%}
+  .role{font-size:12px;font-weight:800;color:var(--purple);margin-bottom:2px}
+  .role .speaker{cursor:pointer}
+  .role .speaker:hover{text-decoration:underline}
+  .role .emotion{color:var(--muted)}
+  .text{white-space:pre-wrap}
+
+  .thought{border:1.5px dashed var(--ink);background:var(--paper2);border-radius:14px;
+    padding:10px 16px;margin:14px 0 14px 48px;color:var(--muted);font-style:italic}
+  .thought .who{font-family:var(--hand);color:var(--purple);font-style:normal}
+
+  .stage-direction{text-align:center;color:var(--muted);font-style:italic;
+    font-size:14px;margin:14px 0;padding:0 20px}
+  .stage-direction .label{font-weight:700;color:var(--ink);font-style:normal}
+
+  details.aside-collapse{margin:14px 0 14px 48px}
+  details.aside-collapse>summary{cursor:pointer;font-weight:700;color:var(--purple);
+    list-style:none;font-size:14px}
+  details.aside-collapse>summary::before{content:"▸ ";display:inline-block;transition:.2s}
+  details.aside-collapse[open]>summary::before{transform:rotate(90deg)}
+  details.aside-collapse[open]>summary{margin-bottom:8px}
+  aside.note,aside.warning,aside.insight{padding:12px 16px;border-radius:9px;
+    border-left:4px solid var(--ink);font-size:14.5px;margin:8px 0 14px 48px}
+  aside.note{background:var(--yellow2)}
+  aside.warning{background:var(--yellow)}
+  aside.insight{background:var(--purple2)}
+  aside .tag{font-weight:800;margin-right:6px}
+
+  .code-title{font-size:12px;font-weight:800;color:var(--purple);margin:16px 0 4px 48px}
+  pre{margin:6px 0 18px 48px;background:var(--codebg);color:var(--codefg);border-radius:13px;
+    padding:16px 18px;overflow-x:auto;font:13px/1.75 ui-monospace,Consolas,monospace}
+  pre code{font-family:inherit}
+  :not(pre)>code{background:var(--yellow2);padding:1px 6px;border-radius:4px;
+    font-size:.92em;font-family:Consolas,ui-monospace,monospace}
+
+  .transition{text-align:center;font-family:var(--hand);color:var(--purple);
+    font-size:20px;margin:22px 0;letter-spacing:4px}
+
+  h2.closing{font-size:30px;margin:54px 0 20px}
+  .paper{background:var(--paper2);border:1.5px solid var(--line);border-radius:20px;
+    box-shadow:5px 6px 0 rgba(40,37,34,.09);overflow:hidden}
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  th{background:var(--yellow2);border-bottom:1.5px solid var(--ink);
+    padding:10px 14px;text-align:left;font-size:13px}
+  td{border-bottom:1px dashed var(--line);padding:10px 14px}
+  .thesis{display:inline-block;margin-top:22px;background:var(--yellow2);
+    padding:6px 14px;border-radius:6px;transform:rotate(-.5deg);font-size:18px;
+    font-weight:700;box-shadow:3px 3px 0 rgba(40,37,34,.12)}
+
+  .character-card{position:fixed;inset:0;background:rgba(40,37,34,.45);
+    display:none;align-items:center;justify-content:center;z-index:100}
+  .character-card.open{display:flex}
+  .panel{background:var(--paper2);border:2px solid var(--ink);border-radius:22px;
+    box-shadow:9px 10px 0 var(--purple);padding:28px;max-width:440px;width:90%}
+  .big-avatar{width:54px;height:54px;border:2px solid var(--ink);border-radius:50%;
+    display:grid;place-items:center;background:var(--yellow2);font-weight:800;
+    font-size:22px;margin-bottom:10px}
+  .panel h3{margin:0 0 4px;font-size:26px}
+  .panel .persona{color:var(--purple);font-size:14px;font-style:italic;margin:0 0 14px}
+  .panel dt{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:1px;margin-top:12px}
+  .panel dd{margin:3px 0 0}
+  .meta-pills{display:flex;gap:6px;flex-wrap:wrap}
+  .meta-pills span{font-size:11px;border:1px solid var(--line);border-radius:99px;
+    padding:2px 9px;color:var(--muted);background:var(--bubble)}
+  .close{margin-top:22px;border:1.5px solid var(--ink);background:var(--yellow2);
+    border-radius:10px;padding:7px 16px;cursor:pointer;font-weight:700;
+    box-shadow:3px 3px 0 var(--ink);transition:.18s;font-size:14px}
+  .close:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+
+  footer{margin-top:60px;padding-top:18px;border-top:1.5px dashed var(--line);
+    color:var(--muted);font-size:14px;text-align:center;font-family:var(--hand)}
+
+  @media(max-width:640px){
+    .wrap{padding:30px 16px 50px}
+    .stage{padding:16px;border-radius:18px}
+    .bubble{max-width:100%}
+    .thought,details.aside-collapse,aside.note,aside.warning,aside.insight,
+    pre,.code-title{margin-left:0}
+  }
+</style>
+</head>
+<body class="theme-light">
+
+<div class="wrap">
+  <span class="kicker">Mini-Play 剧本</span>
+  <h1>元数据知识库的诞生</h1>
+  <p class="scene">📍 场景：一个 AI 项目小组在讨论&#34;怎么让 LLM 知道数据库里有什么&#34;</p>
+
+  <nav class="nav">
+    <a href="#act-0">第一幕：没有知识库的时候</a>
+    <a href="#act-1">第二幕：那直接把表结构塞给 LLM</a>
+    <a href="#act-2">第三幕：元数据知识库的诞生</a>
+    <a href="#act-3">第四幕：分工</a>
+    <a href="#act-4">第五幕：各就各位</a>
+    <a href="#act-5">第六幕：问数工作流用起来</a>
+    <a href="#closing">谢幕总结</a>
+  </nav>
+
+  <div id="character-card" class="character-card" onclick="if(event.target===this)closeCard()">
+    <div class="panel">
+      <div class="big-avatar" id="card-avatar"></div>
+      <h3 id="card-name"></h3>
+      <p class="persona" id="card-persona"></p>
+      <dl>
+        <dt>别名</dt><dd id="card-aliases"></dd>
+        <dt>背景</dt><dd id="card-backstory"></dd>
+        <dt>登场幕次</dt><dd class="meta-pills" id="card-appearances"></dd>
+      </dl>
+      <button class="close" onclick="closeCard()">合上角色卡</button>
+    </div>
+  </div>
+
+  <section class="stage" id="act-0">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第一幕：没有知识库的时候</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('产品经理')">产</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('产品经理')">产品经理</span></div>
+        <div class="text">用户想用中文问&#34;华北地区销售额&#34;，LLM 去生成 SQL 查数据库。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span> · <span class="emotion">困惑</span></div>
+        <div class="text">我可以写 SQL，但……你数据库里有什么表？字段叫什么？我啥也不知道啊。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据库')">元数据库</span></div>
+        <div class="text">我倒是知道。我在 MySQL 里存着完整的表结构和字段定义：`fact_order` 有 `order_amount`、`dim_region` 有 `province`……但 LLM 你又不会直接来查我。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span></div>
+        <div class="text">对啊，你存你的，我写我的，咱俩连不上。</div>
+      </div>
+    </div>
+    <div class="stage-direction">
+      （<span class="label">问题：</span>LLM 不知道数据库长什么样，盲写 SQL。）
+    </div>
+  </section>
+  <section class="stage" id="act-1">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第二幕：那直接把表结构塞给 LLM</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="stage-direction">
+      （<span class="label">方案：</span>每次用户提问，把整个数据库的表结构全部塞给 LLM。）
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据库')">元数据库</span></div>
+        <div class="text">我给你看看我存了啥——</div>
+      </div>
+    </div>
+    <pre><code class="language-yaml">table_info: 5张表
+column_info: 30个字段
+metric_info: 2个指标
+column_metric: 若干关联关系
+……</code></pre>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span> · <span class="emotion">无奈</span></div>
+        <div class="text">停！这些全是 `id`、`name`、`description` 的 ORM 原始数据，我要看的是&#34;这个字段在业务上叫什么&#34;、&#34;字段里有什么值&#34;。而且每次把5张表30个字段全塞给我，我处理不过来。</div>
+      </div>
+    </div>
+    <div class="stage-direction">
+      （<span class="label">问题：</span>信息太原始、太多，LLM 消化不了。）
+    </div>
+  </section>
+  <section class="stage" id="act-2">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第三幕：元数据知识库的诞生</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据知识库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据知识库')">元数据知识库</span></div>
+        <div class="text">我懂了。我们需要解决三个问题：
+1. LLM 需要的是带语义的字段信息，不是 ORM 原始数据
+2. 用户的问题是模糊的（&#34;销售额&#34; vs `order_amount`），需要建语义索引
+3. LLM 写 WHERE 条件时需要知道字段里有啥真实值
+
+我决定建三套索引配合工作——</div>
+      </div>
+    </div>
+  </section>
+  <section class="stage" id="act-3">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第四幕：分工</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据知识库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据知识库')">元数据知识库</span></div>
+        <div class="text">元数据库，你先打头阵。你把配置里的表结构、字段定义、指标口径存成结构化数据。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据库')">元数据库</span></div>
+        <div class="text">明白。我把 `table_info`、`column_info`、`metric_info`、`column_metric` 四张表写得清清楚楚。`fact_order.order_amount`，角色是 `measure`，描述是&#34;订单金额&#34;，别名叫&#34;销售额、交易额&#34;。LLM 以后查我能拿到完整的结构化元数据。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据知识库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据知识库')">元数据知识库</span></div>
+        <div class="text">好的。但 LLM 查你的时候是精确匹配——它必须知道 `order_amount` 这个名字才能查到你。可用户说的是&#34;销售额&#34;，不是 `order_amount`，怎么办？</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Qdrant')">Q</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Qdrant')">Qdrant</span></div>
+        <div class="text">我来。你把字段名、字段描述、别名全部给我，我转成向量存起来。用户说&#34;销售额&#34;，我通过向量相似度找到语义上最接近的 `order_amount`。模糊匹配我擅长。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据知识库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据知识库')">元数据知识库</span></div>
+        <div class="text">好。字段向量归你。那指标怎么办？用户说&#34;GMV&#34;，但数据库里没有叫 GMV 的字段，它是一个聚合口径。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Qdrant')">Q</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Qdrant')">Qdrant</span></div>
+        <div class="text">指标也给我。指标名、指标描述、别名我同样转成向量。这样用户说&#34;成交总额&#34;→ 我搜到 GMV 指标 → 指标告诉 LLM&#34;GMV = SUM(order_amount)&#34;。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据知识库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据知识库')">元数据知识库</span></div>
+        <div class="text">对了。那字段取值呢？用户说&#34;华北地区&#34;，LLM 需要知道&#34;华北&#34;是 `dim_region.province` 里的一个值，才能写出 `WHERE province = &#39;华北&#39;`。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('ES')">E</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('ES')">ES</span></div>
+        <div class="text">我来。元数据库你告诉我哪些字段需要全文检索（`sync: true` 的维度字段），我去 dw 数仓里把它们的真实取值全捞出来，建全文索引。用户说&#34;华北&#34;，我在索引里一搜，发现它在 `dim_region.province` 字段里出现过，然后告诉 LLM：&#34;华北&#34;属于 `province` 字段，你可以写 `WHERE province = &#39;华北&#39;`。</div>
+      </div>
+    </div>
+  </section>
+  <section class="stage" id="act-4">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第五幕：各就各位</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据知识库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据知识库')">元数据知识库</span> · <span class="emotion">兴奋</span></div>
+        <div class="text">好，全体都有。开始构建——</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('配置')">配</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('配置')">配置</span></div>
+        <div class="text">我这里定义了 5 张星型模型的表、30 个字段、2 个指标。开工！</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据知识库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据知识库')">元数据知识库</span></div>
+        <div class="text">元数据库，你先来。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据库')">元数据库</span></div>
+        <div class="text">- `table_info` ← 5 张表写好
+- `column_info` ← 30 个字段写好，每个字段的 id、名称、类型、角色、描述、别名都有了
+- `metric_info` ← GMV 和 AOV 写好，告诉系统它们的计算口径</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据知识库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据知识库')">元数据知识库</span></div>
+        <div class="text">好。Qdrant，轮到你。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Qdrant')">Q</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Qdrant')">Qdrant</span></div>
+        <div class="text">- 字段集合 `column_info_collection`：
+  - `order_amount`（字段名）
+  - &#34;订单金额&#34;（描述）
+  - &#34;销售额&#34;、&#34;交易额&#34;（别名）→ 每个建一个向量点，payload 都指向同一个字段
+- 指标集合 `metric_info_collection`：
+  - `GMV`（指标名）
+  - &#34;成交总额&#34;（别名）→ 同理，payload 指向 GMV</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('元数据知识库')">元</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('元数据知识库')">元数据知识库</span></div>
+        <div class="text">ES，你殿后。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('ES')">E</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('ES')">ES</span></div>
+        <div class="text">- `value_index` 索引建好
+- 按配置里的 `sync` 标志：
+  - `dim_region.province` → sync: true → 去数仓查 `SELECT DISTINCT province FROM dim_region` → 写入索引
+  - `dim_region.region_name` → sync: true → 同理
+  - `fact_order.order_amount` → sync: false → 跳过，金额不需要全文检索</div>
+      </div>
+    </div>
+  </section>
+  <section class="stage" id="act-5">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第六幕：问数工作流用起来</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('用户')">用</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('用户')">用户</span></div>
+        <div class="text">统计华北地区的销售总额</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span> · <span class="emotion">兴奋</span></div>
+        <div class="text">数据来了！
+- Qdrant 告诉我：&#34;销售总额&#34; → 搜到 `order_amount`
+- ES 告诉我：&#34;华北&#34; → 搜到 `dim_region.province` 的取值
+- 元数据库 MySQL 告诉我：`order_amount` 是 `decimal(10,2)` 类型，属于 `fact_order` 表
+
+好，我写 SQL：</div>
+      </div>
+    </div>
+    <pre><code class="language-sql">SELECT SUM(order_amount) AS 销售总额
+FROM fact_order
+JOIN dim_region ON fact_order.region_id = dim_region.region_id
+WHERE dim_region.province = &#39;华北&#39;</code></pre>
+    <div class="line">
+      <span class="avatar" onclick="showCard('用户')">用</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('用户')">用户</span></div>
+        <div class="text">✅ 看到结果了。</div>
+      </div>
+    </div>
+  </section>
+
+  <h2 class="closing" id="closing">谢幕总结</h2>
+  <div class="paper">
+    <table>
+      <thead><tr><th>角色</th><th>在构建阶段做的事</th><th>在查询阶段做的事</th></tr></thead>
+      <tbody>
+      <tr><td>元数据库（MySQL）</td><td>存储结构化的表/字段/指标元数据</td><td>运行时补齐主外键、指标依赖字段</td></tr>
+      <tr><td>Qdrant</td><td>字段名/描述/别名、指标名/描述/别名 → 向量点</td><td>用户问问题 → 按语义搜到相关字段和指标</td></tr>
+      <tr><td>ES</td><td>维度字段的真实取值 → 全文索引</td><td>用户问具体值（&#34;华北&#34;）→ 定位到所属字段</td></tr>
+      <tr><td>元数据知识库</td><td>总指挥：配置管理、调用顺序、数据一致性</td><td>离线建好、在线直接用</td></tr>
+      <tr><td>LLM</td><td>不需要参与构建</td><td>接收三路召回结果 → 理解表结构和指标口径 → 生成 SQL</td></tr>
+      <tr><td>产品经理</td><td>提出痛点：LLM 答不上来</td><td>验收：用户能问到答案</td></tr>
+      <tr><td>配置</td><td>圈定要加工的表/字段/指标</td><td>—</td></tr>
+      <tr><td>用户</td><td>—</td><td>用自然语言问数据问题</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div><span class="thesis">✒ LLM 很强，但不能让它现场猜数据库里有什么。构建阶段提前把数据库的&#34;地图&#34;（元数据）加工成 LLM 能直接用的格式（向量索引 + 全文索引 + 结构化元数据），运行时 LLM 只需查地图，不猜路。</span></div>
+
+  <footer>✦ 由 Mini-Play 渲染 · 剧本即源码，HTML 只是产物</footer>
+</div>
+
+<script>
+  const characters = {
+    "\u4ea7\u54c1\u7ecf\u7406": {
+      persona: "\u63d0\u9700\u6c42\u7684\u4eba\uff0c\u5173\u5fc3\"\u7528\u6237\u80fd\u4e0d\u80fd\u95ee\u5230\u7b54\u6848\"",
+      aliases: [],
+      backstory: "\u4e0d\u61c2\u6280\u672f\u7ec6\u8282\uff0c\u53ea\u60f3\u77e5\u9053 LLM \u4e3a\u4ec0\u4e48\u7b54\u4e0d\u4e0a\u6765\u3002",
+      appearances: ["\u7b2c\u4e00\u5e55\uff1a\u6ca1\u6709\u77e5\u8bc6\u5e93\u7684\u65f6\u5019"]
+    },    "LLM": {
+      persona: "\u4f1a\u5199 SQL \u4f46\u4e0d\u77e5\u9053\u6570\u636e\u5e93\u91cc\u6709\u4ec0\u4e48\u7684 AI",
+      aliases: ["\u5927\u6a21\u578b"],
+      backstory: "\u4e0a\u4e0b\u6587\u7a97\u53e3\u6709\u9650\uff0c\u5403\u4e0d\u4e0b\u6574\u5e93\u7684\u539f\u59cb\u5143\u6570\u636e\uff1b\u64c5\u957f\u8bed\u4e49\u7406\u89e3\u548c\u4ee3\u7801\u751f\u6210\u3002",
+      appearances: ["\u7b2c\u4e00\u5e55\uff1a\u6ca1\u6709\u77e5\u8bc6\u5e93\u7684\u65f6\u5019", "\u7b2c\u4e8c\u5e55\uff1a\u90a3\u76f4\u63a5\u628a\u8868\u7ed3\u6784\u585e\u7ed9 LLM", "\u7b2c\u516d\u5e55\uff1a\u95ee\u6570\u5de5\u4f5c\u6d41\u7528\u8d77\u6765"]
+    },    "\u5143\u6570\u636e\u5e93": {
+      persona: "\u5728 MySQL \u91cc\u5b58\u8868\u7ed3\u6784\u548c\u5b57\u6bb5\u5b9a\u4e49\u7684\"\u6863\u6848\u5ba4\"",
+      aliases: ["\u5143\u6570\u636e\u5e93\uff08MySQL\uff09", "MySQL"],
+      backstory: "\u77e5\u9053\u6240\u6709\u8868/\u5b57\u6bb5\u7684\u7cbe\u786e\u5b9a\u4e49\uff0c\u4f46 LLM \u4e0d\u4f1a\u76f4\u63a5\u67e5\u5b83\u3002",
+      appearances: ["\u7b2c\u4e00\u5e55\uff1a\u6ca1\u6709\u77e5\u8bc6\u5e93\u7684\u65f6\u5019", "\u7b2c\u4e8c\u5e55\uff1a\u90a3\u76f4\u63a5\u628a\u8868\u7ed3\u6784\u585e\u7ed9 LLM", "\u7b2c\u56db\u5e55\uff1a\u5206\u5de5", "\u7b2c\u4e94\u5e55\uff1a\u5404\u5c31\u5404\u4f4d"]
+    },    "\u5143\u6570\u636e\u77e5\u8bc6\u5e93": {
+      persona: "\u603b\u6307\u6325/\u603b\u8bbe\u8ba1\u5e08\uff0c\u8d1f\u8d23\u628a\"\u6863\u6848\"\u52a0\u5de5\u6210\"\u5730\u56fe\"",
+      aliases: ["\u5143\u6570\u636e\u77e5\u8bc6\u5e93\uff08\u603b\u8bbe\u8ba1\u5e08\uff09", "\u5143\u6570\u636e\u77e5\u8bc6\u5e93\uff08\u603b\u6307\u6325\uff09"],
+      backstory: "\u89e3\u51b3\u4e09\u4e2a\u6838\u5fc3\u95ee\u9898\uff1a\u8bed\u4e49\u5b57\u6bb5\u3001\u6a21\u7cca\u5339\u914d\u3001\u771f\u5b9e\u503c\u68c0\u7d22\uff1b\u534f\u8c03\u4e09\u4e2a\u7d22\u5f15\u5f15\u64ce\u534f\u4f5c\u3002",
+      appearances: ["\u7b2c\u4e09\u5e55\uff1a\u5143\u6570\u636e\u77e5\u8bc6\u5e93\u7684\u8bde\u751f", "\u7b2c\u56db\u5e55\uff1a\u5206\u5de5", "\u7b2c\u4e94\u5e55\uff1a\u5404\u5c31\u5404\u4f4d"]
+    },    "Qdrant": {
+      persona: "\u5411\u91cf\u6570\u636e\u5e93\uff0c\u6a21\u7cca\u8bed\u4e49\u5339\u914d\u7684\u4e13\u5bb6",
+      aliases: [],
+      backstory: "\u628a\u5b57\u6bb5\u540d/\u63cf\u8ff0/\u522b\u540d\u8f6c\u6210\u5411\u91cf\uff0c\u6309\u8bed\u4e49\u76f8\u4f3c\u5ea6\u53ec\u56de\u3002",
+      appearances: ["\u7b2c\u56db\u5e55\uff1a\u5206\u5de5", "\u7b2c\u4e94\u5e55\uff1a\u5404\u5c31\u5404\u4f4d"]
+    },    "ES": {
+      persona: "\u5168\u6587\u68c0\u7d22\u5f15\u64ce\uff0c\u64c5\u957f\u5728\u771f\u5b9e\u53d6\u503c\u91cc\u505a\u7cbe\u786e\u5339\u914d",
+      aliases: ["Elasticsearch"],
+      backstory: "\u628a\u7ef4\u5ea6\u5b57\u6bb5\u7684\u771f\u5b9e\u53d6\u503c\u5efa\u7d22\u5f15\uff0c\u8ba9\"\u534e\u5317\"\u80fd\u5b9a\u4f4d\u5230\u5177\u4f53\u5b57\u6bb5\u3002",
+      appearances: ["\u7b2c\u56db\u5e55\uff1a\u5206\u5de5", "\u7b2c\u4e94\u5e55\uff1a\u5404\u5c31\u5404\u4f4d"]
+    },    "\u914d\u7f6e": {
+      persona: "meta_config.yaml\uff0c\u5b9a\u4e49\u8981\u7d22\u5f15\u54ea\u4e9b\u8868/\u5b57\u6bb5/\u6307\u6807",
+      aliases: ["meta_config.yaml", "\u914d\u7f6e\uff08meta_config.yaml\uff09"],
+      backstory: "\u51b3\u5b9a\u54ea\u4e9b\u8868/\u5b57\u6bb5/\u6307\u6807\u4f1a\u88ab\u52a0\u5de5\u3002",
+      appearances: ["\u7b2c\u4e94\u5e55\uff1a\u5404\u5c31\u5404\u4f4d"]
+    },    "\u7528\u6237": {
+      persona: "\u7528\u81ea\u7136\u8bed\u8a00\u95ee\u6570\u636e\u95ee\u9898\u7684\u4e1a\u52a1\u65b9",
+      aliases: [],
+      backstory: "\u4e0d\u61c2\u6570\u636e\u5e93\u7ec6\u8282\uff0c\u8bf4\u8bdd\u6a21\u7cca\u4f46\u9700\u6c42\u6e05\u6670\u3002",
+      appearances: ["\u7b2c\u516d\u5e55\uff1a\u95ee\u6570\u5de5\u4f5c\u6d41\u7528\u8d77\u6765"]
+    }  };
+
+  function showCard(name) {
+    const ch = characters[name];
+    if (!ch) return;
+    document.getElementById('card-avatar').textContent = name[0];
+    document.getElementById('card-name').textContent = name;
+    document.getElementById('card-persona').textContent = ch.persona;
+    document.getElementById('card-aliases').textContent = ch.aliases.length ? ch.aliases.join('、') : '（无）';
+    document.getElementById('card-backstory').textContent = ch.backstory;
+    const wrap = document.getElementById('card-appearances');
+    wrap.innerHTML = '';
+    const acts = ch.appearances.length ? ch.appearances : ['（未登场）'];
+    acts.forEach(a => {
+      const s = document.createElement('span');
+      s.textContent = a;
+      wrap.appendChild(s);
+    });
+    document.getElementById('character-card').classList.add('open');
+  }
+  function closeCard() {
+    document.getElementById('character-card').classList.remove('open');
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCard(); });
+</script>
+</body>
+</html>

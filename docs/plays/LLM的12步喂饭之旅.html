@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM 的 12 步&#34;喂饭&#34;之旅</title>
+<style>
+  :root{
+    --paper:#f7f1e5; --paper2:#fffaf0; --ink:#282522; --muted:#70695f;
+    --purple:#8e7bb8; --purple2:#e9e1f2; --yellow:#f2d778; --yellow2:#fff2b8;
+    --line:#d8cdbb; --bubble:#ffffff; --codebg:#292722; --codefg:#f8f1df;
+    --hand:"Ma Shan Zheng","Kaiti SC",KaiTi,STKaiti,cursive;
+  }
+  body.theme-dark{
+    --paper:#262019; --paper2:#2d271f; --ink:#eee6d8; --muted:#a89e8d;
+    --purple:#b7a8da; --purple2:#3c3449; --yellow:#d9c069; --yellow2:#453c22;
+    --line:#4a4234; --bubble:#332c23; --codebg:#1c1812;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;color:var(--ink);
+    font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:
+      radial-gradient(circle at 10% 10%,rgba(142,123,184,.08) 0 2px,transparent 3px),
+      radial-gradient(circle at 80% 30%,rgba(242,215,120,.10) 0 2px,transparent 3px),
+      var(--paper);
+    background-size:29px 29px,37px 37px,auto;
+    line-height:1.75;
+  }
+  .wrap{max-width:860px;margin:0 auto;padding:46px 24px 70px}
+
+  .kicker{display:inline-block;background:var(--yellow2);border:1.5px solid var(--ink);
+    padding:3px 12px;border-radius:5px;transform:rotate(-1.5deg);font-size:13px;
+    font-weight:700;box-shadow:2px 2px 0 var(--ink)}
+  h1{font-size:clamp(34px,6vw,54px);line-height:1.15;margin:24px 0 10px;letter-spacing:-1px}
+  .scene{color:var(--muted);font-size:16px;padding:4px 0 16px;
+    border-bottom:1.5px dashed var(--line);margin-bottom:26px}
+
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+  .nav a{font-size:13px;border:1px solid var(--line);border-radius:99px;padding:3px 12px;
+    color:var(--muted);text-decoration:none;background:var(--paper2)}
+  .nav a:hover{border-color:var(--ink);color:var(--ink)}
+
+  .stage{background:var(--paper2);border:2px solid var(--ink);border-radius:25px;
+    box-shadow:9px 10px 0 var(--purple);padding:22px 26px;margin:38px 0;
+    transform:rotate(-.35deg)}
+  section.stage:nth-of-type(even){transform:rotate(.35deg)}
+  .stage-top{display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1.5px dashed var(--line);padding-bottom:12px;margin-bottom:16px}
+  .stage-title{font-weight:800;font-size:18px}
+  .dots{display:flex;gap:5px}
+  .dots i{width:8px;height:8px;border:1.5px solid var(--ink);border-radius:50%}
+  .act-scene{font-size:13px;color:var(--muted);font-style:italic;margin:0 0 10px}
+
+  .line{display:flex;gap:12px;align-items:flex-start;margin:14px 0}
+  .avatar{flex:none;width:36px;height:36px;border:1.5px solid var(--ink);border-radius:50%;
+    display:grid;place-items:center;background:var(--yellow2);font-weight:800;
+    font-size:15px;cursor:pointer;margin-top:5px;transition:.18s}
+  .avatar:hover{background:var(--purple2);transform:rotate(-6deg)}
+  .bubble{background:var(--bubble);border:1.5px solid var(--ink);border-radius:16px 16px 16px 4px;
+    padding:10px 16px;box-shadow:3px 3px 0 rgba(40,37,34,.12);max-width:88%}
+  .role{font-size:12px;font-weight:800;color:var(--purple);margin-bottom:2px}
+  .role .speaker{cursor:pointer}
+  .role .speaker:hover{text-decoration:underline}
+  .role .emotion{color:var(--muted)}
+  .text{white-space:pre-wrap}
+
+  .thought{border:1.5px dashed var(--ink);background:var(--paper2);border-radius:14px;
+    padding:10px 16px;margin:14px 0 14px 48px;color:var(--muted);font-style:italic}
+  .thought .who{font-family:var(--hand);color:var(--purple);font-style:normal}
+
+  .stage-direction{text-align:center;color:var(--muted);font-style:italic;
+    font-size:14px;margin:14px 0;padding:0 20px}
+  .stage-direction .label{font-weight:700;color:var(--ink);font-style:normal}
+
+  details.aside-collapse{margin:14px 0 14px 48px}
+  details.aside-collapse>summary{cursor:pointer;font-weight:700;color:var(--purple);
+    list-style:none;font-size:14px}
+  details.aside-collapse>summary::before{content:"▸ ";display:inline-block;transition:.2s}
+  details.aside-collapse[open]>summary::before{transform:rotate(90deg)}
+  details.aside-collapse[open]>summary{margin-bottom:8px}
+  aside.note,aside.warning,aside.insight{padding:12px 16px;border-radius:9px;
+    border-left:4px solid var(--ink);font-size:14.5px;margin:8px 0 14px 48px}
+  aside.note{background:var(--yellow2)}
+  aside.warning{background:var(--yellow)}
+  aside.insight{background:var(--purple2)}
+  aside .tag{font-weight:800;margin-right:6px}
+
+  .code-title{font-size:12px;font-weight:800;color:var(--purple);margin:16px 0 4px 48px}
+  pre{margin:6px 0 18px 48px;background:var(--codebg);color:var(--codefg);border-radius:13px;
+    padding:16px 18px;overflow-x:auto;font:13px/1.75 ui-monospace,Consolas,monospace}
+  pre code{font-family:inherit}
+  :not(pre)>code{background:var(--yellow2);padding:1px 6px;border-radius:4px;
+    font-size:.92em;font-family:Consolas,ui-monospace,monospace}
+
+  .transition{text-align:center;font-family:var(--hand);color:var(--purple);
+    font-size:20px;margin:22px 0;letter-spacing:4px}
+
+  h2.closing{font-size:30px;margin:54px 0 20px}
+  .paper{background:var(--paper2);border:1.5px solid var(--line);border-radius:20px;
+    box-shadow:5px 6px 0 rgba(40,37,34,.09);overflow:hidden}
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  th{background:var(--yellow2);border-bottom:1.5px solid var(--ink);
+    padding:10px 14px;text-align:left;font-size:13px}
+  td{border-bottom:1px dashed var(--line);padding:10px 14px}
+  .thesis{display:inline-block;margin-top:22px;background:var(--yellow2);
+    padding:6px 14px;border-radius:6px;transform:rotate(-.5deg);font-size:18px;
+    font-weight:700;box-shadow:3px 3px 0 rgba(40,37,34,.12)}
+
+  .character-card{position:fixed;inset:0;background:rgba(40,37,34,.45);
+    display:none;align-items:center;justify-content:center;z-index:100}
+  .character-card.open{display:flex}
+  .panel{background:var(--paper2);border:2px solid var(--ink);border-radius:22px;
+    box-shadow:9px 10px 0 var(--purple);padding:28px;max-width:440px;width:90%}
+  .big-avatar{width:54px;height:54px;border:2px solid var(--ink);border-radius:50%;
+    display:grid;place-items:center;background:var(--yellow2);font-weight:800;
+    font-size:22px;margin-bottom:10px}
+  .panel h3{margin:0 0 4px;font-size:26px}
+  .panel .persona{color:var(--purple);font-size:14px;font-style:italic;margin:0 0 14px}
+  .panel dt{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:1px;margin-top:12px}
+  .panel dd{margin:3px 0 0}
+  .meta-pills{display:flex;gap:6px;flex-wrap:wrap}
+  .meta-pills span{font-size:11px;border:1px solid var(--line);border-radius:99px;
+    padding:2px 9px;color:var(--muted);background:var(--bubble)}
+  .close{margin-top:22px;border:1.5px solid var(--ink);background:var(--yellow2);
+    border-radius:10px;padding:7px 16px;cursor:pointer;font-weight:700;
+    box-shadow:3px 3px 0 var(--ink);transition:.18s;font-size:14px}
+  .close:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+
+  footer{margin-top:60px;padding-top:18px;border-top:1.5px dashed var(--line);
+    color:var(--muted);font-size:14px;text-align:center;font-family:var(--hand)}
+
+  @media(max-width:640px){
+    .wrap{padding:30px 16px 50px}
+    .stage{padding:16px;border-radius:18px}
+    .bubble{max-width:100%}
+    .thought,details.aside-collapse,aside.note,aside.warning,aside.insight,
+    pre,.code-title{margin-left:0}
+  }
+</style>
+</head>
+<body class="theme-light">
+
+<div class="wrap">
+  <span class="kicker">Mini-Play 剧本</span>
+  <h1>LLM 的 12 步&#34;喂饭&#34;之旅</h1>
+  <p class="scene">📍 场景：一个 AI 问数项目的工作流内部，LLM 在和 LangGraph 对话</p>
+
+  <nav class="nav">
+    <a href="#act-0">第一幕：LLM 的困境</a>
+    <a href="#act-1">第二幕：先抽关键词</a>
+    <a href="#act-2">第三幕：三路并行搜数据</a>
+    <a href="#act-3">第四幕：合并成能看懂的样子</a>
+    <a href="#act-4">第五幕：缩小范围</a>
+    <a href="#act-5">第六幕：补充额外信息</a>
+    <a href="#act-6">第七幕：生成 SQL</a>
+    <a href="#act-7">第八幕：校验和修正</a>
+    <a href="#act-8">第九幕：执行</a>
+    <a href="#act-9">谢幕：为什么要分这么多步？</a>
+    <a href="#closing">谢幕总结</a>
+  </nav>
+
+  <div id="character-card" class="character-card" onclick="if(event.target===this)closeCard()">
+    <div class="panel">
+      <div class="big-avatar" id="card-avatar"></div>
+      <h3 id="card-name"></h3>
+      <p class="persona" id="card-persona"></p>
+      <dl>
+        <dt>别名</dt><dd id="card-aliases"></dd>
+        <dt>背景</dt><dd id="card-backstory"></dd>
+        <dt>登场幕次</dt><dd class="meta-pills" id="card-appearances"></dd>
+      </dl>
+      <button class="close" onclick="closeCard()">合上角色卡</button>
+    </div>
+  </div>
+
+  <section class="stage" id="act-0">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第一幕：LLM 的困境</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('用户')">用</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('用户')">用户</span></div>
+        <div class="text">统计华北地区2025年第一季度的GMV</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">LLM，用户问你问题了，给个 SQL 吧。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span> · <span class="emotion">无奈</span></div>
+        <div class="text">……我连你数据库长什么样都不知道，我写什么 SQL？你让我盲写我只能编——`SELECT * FROM 随便猜的表 WHERE 可能对的字段 = &#39;华北&#39;`，你敢用吗？</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">那你要什么？</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span></div>
+        <div class="text">我需要知道：
+1. 用户这个问题里哪些词是关键的检索线索？
+2. 数据库里有哪些表和字段可能和这些问题有关？
+3. 这些字段里有什么真实值可以做过滤？
+4. 用户说的&#34;GMV&#34;在数据库里对应什么字段？口径是什么？
+5. 最终该写什么 SQL？
+
+你一股脑全给我我也处理不了，我上下文窗口有限，你得一步步喂。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">懂了。我给你拆成 12 步，一步一步喂你。</div>
+      </div>
+    </div>
+  </section>
+  <section class="stage" id="act-1">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第二幕：先抽关键词</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">我先帮你从用户问题里抽关键词。你等一下——</div>
+      </div>
+    </div>
+    <pre><code class="language-python">keywords = jieba.analyse.extract_tags(&#34;统计华北地区2025年第一季度的GMV&#34;, allowPOS=...)
+# → [&#34;华北&#34;, &#34;地区&#34;, &#34;GMV&#34;, &#34;2025&#34;, &#34;第一季度&#34;]</code></pre>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">LLM，这是抽出来的关键词，后面我就按这些词去搜数据了。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span></div>
+        <div class="text">嗯，&#34;地区&#34;这种词意义不大，但&#34;华北&#34;、&#34;GMV&#34;、&#34;2025&#34;、&#34;第一季度&#34;都有业务含义。拿这些去搜吧。</div>
+      </div>
+    </div>
+    <details class="aside-collapse">
+      <summary>💡 为什么需要这步</summary>
+      <aside class="insight"><span class="tag">💡 为什么需要这步</span>用户问题是自然语言，混着&#34;统计&#34;&#34;的&#34;这种噪声。不抽关键词直接拿整句话去搜，精确度很差。</aside>
+    </details>
+  </section>
+  <section class="stage" id="act-2">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第三幕：三路并行搜数据</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">关键词有了，我现在三路并发去搜——
+- recall_column：把关键词扩展成字段语义（&#34;销售额&#34;→&#34;销售金额&#34;&#34;GMV&#34;），去 Qdrant 搜向量 → 召回 `fact_order.order_amount`、`fact_order.order_quantity`
+- recall_value：去 ES 搜&#34;华北&#34;→ 发现它在 `dim_region.province` 字段里，取值为&#34;华北&#34;
+- recall_metric：扩展成指标语义（&#34;GMV&#34;→&#34;成交总额&#34;），去 Qdrant 搜指标 → 召回 GMV 指标</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span> · <span class="emotion">焦虑</span></div>
+        <div class="text">等等，你一次塞给我三堆数据我头大——一堆字段、一堆取值、一堆指标，我怎么知道谁跟谁是一家的？</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">别急，我帮你合并。</div>
+      </div>
+    </div>
+    <details class="aside-collapse">
+      <summary>💡 为什么需要这步</summary>
+      <aside class="insight"><span class="tag">💡 为什么需要这步</span>不同维度的信息各自存储在不同的引擎（Qdrant 搜语义、ES 搜取值），必须并行搜再合并。串行搜太慢。</aside>
+    </details>
+  </section>
+  <section class="stage" id="act-3">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第四幕：合并成能看懂的样子</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">我现在做 7 件小事——
+1. 字段去重（多个关键词可能命中同一个字段）
+2. 指标依赖的字段如果漏了，从元数据库补回来（GMV 依赖 `order_amount`）
+3. ES 搜到的&#34;华北&#34;这个值，放回 `dim_region.province` 的 examples 里
+4. 字段按表分组（`fact_order` 下的字段、`dim_region` 下的字段）
+5. 每张表补齐主外键（JOIN 需要）
+6. 精简字段，只留 LLM 需要的信息
+7. 精简指标，同样只留必要信息
+
+给你看看我合并完的样子：</div>
+      </div>
+    </div>
+    <pre><code class="language-yaml">- name: fact_order
+  role: fact
+  columns:
+    - name: order_amount
+      type: decimal(10,2)
+      role: measure
+      description: 订单金额
+      alias: [销售额, 交易额]
+    - name: region_id
+      role: foreign_key
+    - name: date_id
+      role: foreign_key
+
+- name: dim_region
+  role: dimension
+  columns:
+    - name: province
+      type: varchar(50)
+      examples: [华北, 华东, 华南]
+      description: 省份
+    - name: region_id
+      role: primary_key
+
+指标：
+- name: GMV
+  description: 所有订单的成交金额总和
+  relevant_columns: [fact_order.order_amount]</code></pre>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span></div>
+        <div class="text">这下我能看懂了——表结构、字段类型、示例值、指标口径一目了然。不过有些表和字段其实用不上，能帮我再筛一下吗？</div>
+      </div>
+    </div>
+    <details class="aside-collapse">
+      <summary>💡 为什么需要这步</summary>
+      <aside class="insight"><span class="tag">💡 为什么需要这步</span>三路召回的结果是零散的，不合并 LLM 无法理解。同时要补齐关联信息（主外键、指标依赖字段），否则 LLM 写 JOIN 时缺胳膊少腿。</aside>
+    </details>
+  </section>
+  <section class="stage" id="act-4">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第五幕：缩小范围</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">你来看——</div>
+      </div>
+    </div>
+    <pre><code class="language-yaml"># 这是候选的全部表和字段，你帮我选一下哪些是实际需要的</code></pre>
+    <div class="thought"><span class="who">LLM（心里）</span>：用户问&#34;华北地区2025年第一季度的GMV&#34;……
+- 需要 `fact_order`：有 `order_amount`（GMV 的计算字段），通过 `region_id` 连地区表，通过 `date_id` 筛时间
+- 需要 `dim_region`：有 `province`，用来过滤&#34;华北&#34;
+- 需要 `dim_date`：有 `year` 和 `quarter`，用来过滤&#34;2025年第一季度&#34;
+- 不需要 `dim_customer`、`dim_product`、`fact_order.order_quantity` 等
+
+所以——</div>
+    <pre><code class="language-json">{
+    &#34;fact_order&#34;: [&#34;order_amount&#34;, &#34;region_id&#34;, &#34;date_id&#34;],
+    &#34;dim_region&#34;: [&#34;province&#34;, &#34;region_id&#34;],
+    &#34;dim_date&#34;: [&#34;year&#34;, &#34;quarter&#34;, &#34;date_id&#34;]
+}</code></pre>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span></div>
+        <div class="text">指标只需要 GMV。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">好，我按你的选择裁掉多余的。</div>
+      </div>
+    </div>
+    <details class="aside-collapse">
+      <summary>💡 为什么需要这步</summary>
+      <aside class="insight"><span class="tag">💡 为什么需要这步</span>不裁的话，5 张表 30 个字段全塞进 prompt，LLM 容易看花眼选错字段。只留相关的，错误率降低。</aside>
+    </details>
+  </section>
+  <section class="stage" id="act-5">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第六幕：补充额外信息</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">LLM，还有些上下文你可能需要——</div>
+      </div>
+    </div>
+    <pre><code class="language-yaml">当前时间：
+  date: 2026-06-26
+  weekday: Friday
+  quarter: Q2
+
+数据库环境：
+  dialect: mysql
+  version: 8.0.41</code></pre>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span></div>
+        <div class="text">好。这样我就知道&#34;2025年第一季度&#34;不是&#34;最近三个月&#34;而是具体的时间段，以及 MySQL 8.0 支持什么语法（窗口函数、CTE 等）。</div>
+      </div>
+    </div>
+    <details class="aside-collapse">
+      <summary>💡 为什么需要这步</summary>
+      <aside class="insight"><span class="tag">💡 为什么需要这步</span>日期信息帮助 LLM 理解相对时间，&#34;本季度&#34;&#34;最近 N 天&#34;才能翻译成正确的 SQL。
+数据库方言和版本影响 SQL 语法——MySQL 和 PostgreSQL 的日期函数不一样。</aside>
+    </details>
+  </section>
+  <section class="stage" id="act-6">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第七幕：生成 SQL</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">LLM，所有信息都齐了，写 SQL 吧。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span> · <span class="emotion">得意</span></div>
+        <div class="text">好，看我的——</div>
+      </div>
+    </div>
+<div class="code-title">✎ 上下文</div>    <pre><code class="language-text">表结构：fact_order（order_amount, region_id, date_id）、
+         dim_region（province, region_id）、
+         dim_date（year, quarter, date_id）
+指标：GMV = SUM(fact_order.order_amount)
+当前时间：2026-06-26
+数据库：MySQL 8.0
+
+【用户问题】
+统计华北地区2025年第一季度的GMV</code></pre>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span></div>
+        <div class="text">写好了：</div>
+      </div>
+    </div>
+    <pre><code class="language-sql">SELECT SUM(fo.order_amount) AS GMV
+FROM fact_order fo
+JOIN dim_region dr ON fo.region_id = dr.region_id
+JOIN dim_date dd ON fo.date_id = dd.date_id
+WHERE dr.province = &#39;华北&#39;
+  AND dd.year = 2025
+  AND dd.quarter = &#39;Q1&#39;</code></pre>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">SQL 拿到了，但我不能直接拿去跑——万一有语法错误呢？</div>
+      </div>
+    </div>
+    <details class="aside-collapse">
+      <summary>💡 为什么需要这步</summary>
+      <aside class="insight"><span class="tag">💡 为什么需要这步</span>LLM 生成 SQL 不是 100% 正确的，需要校验兜底。</aside>
+    </details>
+  </section>
+  <section class="stage" id="act-7">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第八幕：校验和修正</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">我去数仓试一下——</div>
+      </div>
+    </div>
+    <pre><code class="language-sql">EXPLAIN SELECT SUM(fo.order_amount) AS GMV ...</code></pre>
+    <div class="stage-direction">
+      （<span class="label">报错：</span>❌ Unknown column &#39;dd.year&#39; in &#39;field list&#39;）
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span> · <span class="emotion">困惑</span></div>
+        <div class="text">果然有问题。`dim_date` 里没有 `year` 字段？我去查一下元数据…… 哦，`dim_date` 里只有 `date_id` 一个字段，年、季度都通过日期运算得到，没有单独的 `year` 列。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">LLM，你写的 SQL 报错了。错误信息是 `Unknown column &#39;dd.year&#39;`。上下文和原来一样，你再看看。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span> · <span class="emotion">思考</span></div>
+        <div class="text">哦对，我错了。`dim_date` 只有 `date_id`，没有 `year` 和 `quarter`。那我用 `YEAR()` 和 `QUARTER()` 函数吧。 修正：</div>
+      </div>
+    </div>
+    <pre><code class="language-sql">SELECT SUM(fo.order_amount) AS GMV
+FROM fact_order fo
+JOIN dim_region dr ON fo.region_id = dr.region_id
+JOIN dim_date dd ON fo.date_id = dd.date_id
+WHERE dr.province = &#39;华北&#39;
+  AND YEAR(dd.date_id) = 2025
+  AND QUARTER(dd.date_id) = 1</code></pre>
+    <details class="aside-collapse">
+      <summary>💡 为什么需要这步</summary>
+      <aside class="insight"><span class="tag">💡 为什么需要这步</span>LLM 不是数据库，它对字段名的记忆可能不准。EXPLAIN 校验 + 修正循环是最后一道防线。</aside>
+    </details>
+  </section>
+  <section class="stage" id="act-8">
+    <div class="stage-top">
+      <span class="stage-title">🎬 第九幕：执行</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">这次应该没问题了。执行——</div>
+      </div>
+    </div>
+    <pre><code class="language-text">mysql&gt; SELECT SUM(fo.order_amount) AS GMV
+       FROM fact_order fo
+       JOIN dim_region dr ON fo.region_id = dr.region_id
+       JOIN dim_date dd ON fo.date_id = dd.date_id
+       WHERE dr.province = &#39;华北&#39;
+         AND YEAR(dd.date_id) = 2025
+         AND QUARTER(dd.date_id) = 1;
+
+       +------------+
+       | GMV        |
+       +------------+
+       | 3848572.50 |
+       +------------+</code></pre>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span> · <span class="emotion">得意</span></div>
+        <div class="text">取到结果了！推送给前端展示。</div>
+      </div>
+    </div>
+  </section>
+  <section class="stage" id="act-9">
+    <div class="stage-top">
+      <span class="stage-title">🎬 谢幕：为什么要分这么多步？</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span></div>
+        <div class="text">现在你明白了吗？不是 Graph 故意把事情搞复杂——每一步解决我一个特定的痛点：</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('Graph')">G</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('Graph')">Graph</span></div>
+        <div class="text">所以我不是在添乱，我是在给你喂饭——每口都切成正好你能吞下的大小。</div>
+      </div>
+    </div>
+    <div class="line">
+      <span class="avatar" onclick="showCard('LLM')">L</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('LLM')">LLM</span></div>
+        <div class="text">对。没有你，我就会被丢进一个陌生的数据库里盲写 SQL——那和蒙着眼睛开车没区别。</div>
+      </div>
+    </div>
+  </section>
+
+  <h2 class="closing" id="closing">谢幕总结</h2>
+  <div class="paper">
+    <table>
+      <thead><tr><th>Graph 的步骤</th><th>解决 LLM 的什么痛点</th></tr></thead>
+      <tbody>
+      <tr><td>extract_keywords</td><td>自然语言太模糊，需要先提炼检索线索</td></tr>
+      <tr><td>recall_column/value/metric</td><td>我不知道数据库里有什么，需要你帮我搜</td></tr>
+      <tr><td>merge_retrieved_info</td><td>零散的信息我理不清关系，需要你帮我整理好</td></tr>
+      <tr><td>filter_table/metric</td><td>信息太多我处理不了，需要你帮我缩小范围</td></tr>
+      <tr><td>add_extra_context</td><td>我需要知道当前时间、数据库类型才能写对语法</td></tr>
+      <tr><td>generate_sql</td><td>这是我唯一真正&#34;动脑&#34;的步骤</td></tr>
+      <tr><td>validate_sql</td><td>我可能记错字段名，需要你帮我检查</td></tr>
+      <tr><td>correct_sql</td><td>错了你给我报错信息，我改</td></tr>
+      <tr><td>run_sql</td><td>最终你去执行，我只看结果</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div><span class="thesis">✒ LLM 不是不能用，是不能裸奔用。把&#34;理解数据库结构&#34;这件难事拆成 12 步流水线，每步只让 LLM 处理它擅长的部分，最终它就只要在最后一幕动一次脑——写 SQL。</span></div>
+
+  <footer>✦ 由 Mini-Play 渲染 · 剧本即源码，HTML 只是产物</footer>
+</div>
+
+<script>
+  const characters = {
+    "\u7528\u6237": {
+      persona: "\u7528\u81ea\u7136\u8bed\u8a00\u63d0\u95ee\u7684\u4e1a\u52a1\u65b9",
+      aliases: [],
+      backstory: "\u4e0d\u61c2\u6570\u636e\u5e93\u7ec6\u8282\uff0c\u53ea\u60f3\u8981\u7b54\u6848\u3002",
+      appearances: ["\u7b2c\u4e00\u5e55\uff1aLLM \u7684\u56f0\u5883"]
+    },    "LLM": {
+      persona: "\u4f1a\u5199 SQL \u4f46\u4e0a\u4e0b\u6587\u7a97\u53e3\u6709\u9650\u7684 AI",
+      aliases: ["\u5927\u6a21\u578b"],
+      backstory: "\u6ca1\u6709\u4e0a\u4e0b\u6587\u5c31\u76f2\u5199\u3001\u4e0a\u4e0b\u6587\u592a\u591a\u5c31\u6d88\u5316\u4e0d\u826f\uff0c\u5fc5\u987b\u88ab\u4eba\"\u5582\"\u3002",
+      appearances: ["\u7b2c\u4e00\u5e55\uff1aLLM \u7684\u56f0\u5883", "\u7b2c\u4e8c\u5e55\uff1a\u5148\u62bd\u5173\u952e\u8bcd", "\u7b2c\u4e09\u5e55\uff1a\u4e09\u8def\u5e76\u884c\u641c\u6570\u636e", "\u7b2c\u56db\u5e55\uff1a\u5408\u5e76\u6210\u80fd\u770b\u61c2\u7684\u6837\u5b50", "\u7b2c\u4e94\u5e55\uff1a\u7f29\u5c0f\u8303\u56f4", "\u7b2c\u516d\u5e55\uff1a\u8865\u5145\u989d\u5916\u4fe1\u606f", "\u7b2c\u4e03\u5e55\uff1a\u751f\u6210 SQL", "\u7b2c\u516b\u5e55\uff1a\u6821\u9a8c\u548c\u4fee\u6b63", "\u8c22\u5e55\uff1a\u4e3a\u4ec0\u4e48\u8981\u5206\u8fd9\u4e48\u591a\u6b65\uff1f"]
+    },    "Graph": {
+      persona: "LangGraph \u5de5\u4f5c\u6d41\u7f16\u6392\u8005\uff0c\u628a\"\u5582\u996d\"\u5207\u6210 12 \u6b65",
+      aliases: ["LangGraph"],
+      backstory: "\u8d1f\u8d23 12 \u6b65\u6d41\u6c34\u7ebf\uff0c\u4ece\u62bd\u5173\u952e\u8bcd\u4e00\u8def\u5230\u6267\u884c SQL\u3002",
+      appearances: ["\u7b2c\u4e00\u5e55\uff1aLLM \u7684\u56f0\u5883", "\u7b2c\u4e8c\u5e55\uff1a\u5148\u62bd\u5173\u952e\u8bcd", "\u7b2c\u4e09\u5e55\uff1a\u4e09\u8def\u5e76\u884c\u641c\u6570\u636e", "\u7b2c\u56db\u5e55\uff1a\u5408\u5e76\u6210\u80fd\u770b\u61c2\u7684\u6837\u5b50", "\u7b2c\u4e94\u5e55\uff1a\u7f29\u5c0f\u8303\u56f4", "\u7b2c\u516d\u5e55\uff1a\u8865\u5145\u989d\u5916\u4fe1\u606f", "\u7b2c\u4e03\u5e55\uff1a\u751f\u6210 SQL", "\u7b2c\u516b\u5e55\uff1a\u6821\u9a8c\u548c\u4fee\u6b63", "\u7b2c\u4e5d\u5e55\uff1a\u6267\u884c", "\u8c22\u5e55\uff1a\u4e3a\u4ec0\u4e48\u8981\u5206\u8fd9\u4e48\u591a\u6b65\uff1f"]
+    }  };
+
+  function showCard(name) {
+    const ch = characters[name];
+    if (!ch) return;
+    document.getElementById('card-avatar').textContent = name[0];
+    document.getElementById('card-name').textContent = name;
+    document.getElementById('card-persona').textContent = ch.persona;
+    document.getElementById('card-aliases').textContent = ch.aliases.length ? ch.aliases.join('、') : '（无）';
+    document.getElementById('card-backstory').textContent = ch.backstory;
+    const wrap = document.getElementById('card-appearances');
+    wrap.innerHTML = '';
+    const acts = ch.appearances.length ? ch.appearances : ['（未登场）'];
+    acts.forEach(a => {
+      const s = document.createElement('span');
+      s.textContent = a;
+      wrap.appendChild(s);
+    });
+    document.getElementById('character-card').classList.add('open');
+  }
+  function closeCard() {
+    document.getElementById('character-card').classList.remove('open');
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCard(); });
+</script>
+</body>
+</html>
