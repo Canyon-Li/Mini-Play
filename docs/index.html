@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mini-Play · 把复杂概念变成一场小剧场</title>
+<meta name="description" content="Mini-Play：把复杂的技术概念、架构、流程，变成一场人人看得懂的小剧场。">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;600;700;800&family=ZCOOL+KuaiLe&display=swap');
+
+:root{
+  --paper:#f7f1e5; --paper2:#fffaf0; --ink:#282522; --muted:#70695f;
+  --purple:#8e7bb8; --purple2:#e9e1f2; --yellow:#f2d778; --yellow2:#fff2b8;
+  --line:#d8cdbb; --shadow:5px 6px 0 rgba(40,37,34,.09);
+  --radius:20px; --max:1120px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;color:var(--ink);font-family:"Noto Sans SC",system-ui,sans-serif;
+  background:
+    radial-gradient(circle at 10% 10%,rgba(142,123,184,.08) 0 2px,transparent 3px),
+    radial-gradient(circle at 80% 30%,rgba(242,215,120,.10) 0 2px,transparent 3px),
+    var(--paper);
+  background-size:29px 29px,37px 37px,auto;
+  line-height:1.75;
+}
+a{color:inherit;text-decoration:none}
+button{font:inherit}
+.container{width:min(var(--max),calc(100% - 36px));margin:auto}
+header{
+  position:sticky;top:0;z-index:20;background:rgba(247,241,229,.91);
+  backdrop-filter:blur(12px);border-bottom:1px dashed var(--line)
+}
+.nav{height:68px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:"ZCOOL KuaiLe",cursive;font-size:25px;letter-spacing:.5px}
+.logo span{display:inline-block;background:var(--yellow2);padding:0 8px;transform:rotate(-2deg)}
+.navlinks{display:flex;gap:22px;font-size:14px;color:var(--muted)}
+.navlinks a:hover{color:var(--purple)}
+.github{
+  border:1.5px solid var(--ink);padding:5px 13px;border-radius:99px;
+  box-shadow:2px 2px 0 var(--ink);background:var(--paper2);font-size:13px
+}
+
+.hero{padding:92px 0 78px;position:relative;overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:60px;align-items:center}
+.kicker{display:inline-block;background:var(--yellow2);padding:3px 12px;border-radius:5px;transform:rotate(-1.5deg);font-size:13px;font-weight:700}
+h1{font-size:clamp(46px,7vw,82px);line-height:1.05;margin:18px 0 18px;letter-spacing:-4px}
+h1 em{font-style:normal;color:var(--purple);font-family:"Ma Shan Zheng",cursive;font-weight:400}
+.hero p{font-size:19px;color:var(--muted);max-width:650px}
+.actions{display:flex;gap:13px;margin-top:28px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:12px;border:1.5px solid var(--ink);font-weight:700;cursor:pointer;box-shadow:3px 3px 0 var(--ink);transition:.18s}
+.btn:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn.primary{background:var(--purple2)} .btn.yellow{background:var(--yellow2)}
+
+.doodle{position:absolute;font-family:"Ma Shan Zheng",cursive;color:var(--purple);font-size:22px}
+.d1{right:7%;top:13%;transform:rotate(8deg)} .d2{left:2%;bottom:8%;transform:rotate(-8deg)}
+
+.stage{
+  background:var(--paper2);border:2px solid var(--ink);border-radius:25px;
+  box-shadow:9px 10px 0 var(--purple);padding:25px;transform:rotate(1.2deg)
+}
+.stage-top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed var(--line);padding-bottom:13px}
+.stage-title{font-weight:800}.dots{display:flex;gap:5px}.dots i{width:8px;height:8px;border:1px solid var(--ink);border-radius:50%;display:block}
+.scene{padding:24px 8px 12px;min-height:315px}
+.bubble{position:relative;padding:13px 16px;border:1.5px solid var(--ink);border-radius:17px;margin:12px 0;max-width:88%;background:white;box-shadow:3px 3px 0 rgba(40,37,34,.12)}
+.bubble.left{margin-right:auto}.bubble.right{margin-left:auto;background:var(--purple2)}
+.role{font-size:12px;font-weight:800;color:var(--purple);margin-bottom:2px}
+.stage-foot{font-size:12px;color:var(--muted);text-align:center}
+
+section{padding:86px 0}
+.section-head{margin-bottom:35px;position:relative}
+.eyebrow{font-size:13px;font-weight:800;color:var(--purple);letter-spacing:1px}
+h2{font-size:38px;line-height:1.2;margin:5px 0 8px;letter-spacing:-1.5px}
+.section-head p{color:var(--muted);margin:0;max-width:720px}
+
+.paper{background:var(--paper2);border:1.5px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{padding:25px;min-height:220px;position:relative;transition:.2s}
+.card:hover{transform:translateY(-5px) rotate(-.4deg)}
+.card:nth-child(2){transform:rotate(1deg)} .card:nth-child(2):hover{transform:translateY(-5px) rotate(1deg)}
+.card:nth-child(3){transform:rotate(-.6deg)} .card:nth-child(3):hover{transform:translateY(-5px) rotate(-.6deg)}
+.num{font-family:"Ma Shan Zheng",cursive;font-size:34px;color:var(--purple)}
+.card h3{margin:4px 0 8px;font-size:19px}.card p{color:var(--muted);font-size:14px}
+.arrow{position:absolute;right:20px;bottom:18px;font-family:"Ma Shan Zheng";font-size:24px}
+
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:center}
+.flow-item{padding:18px 12px;text-align:center;border:1.5px dashed var(--ink);border-radius:15px;background:rgba(255,250,240,.75)}
+.flow-item strong{display:block;font-size:15px}.flow-item small{color:var(--muted);font-size:11px}
+.flow-arrow{text-align:center;font-size:23px;color:var(--purple)}
+
+.tutorial{display:grid;grid-template-columns:220px 1fr;gap:20px}
+.steps{display:flex;flex-direction:column;gap:8px}
+.step-btn{
+  text-align:left;border:1.5px solid transparent;background:transparent;border-radius:13px;
+  padding:12px 14px;cursor:pointer;color:var(--muted)
+}
+.step-btn.active{background:var(--yellow2);border-color:var(--ink);color:var(--ink);font-weight:800;box-shadow:3px 3px 0 var(--ink)}
+.demo{padding:27px;min-height:390px}
+.demo-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1px dashed var(--line);padding-bottom:12px}
+.pill{font-size:11px;padding:3px 9px;border-radius:99px;background:var(--purple2)}
+.demo-content{padding-top:22px}
+.command{background:#292722;color:#f8f1df;border-radius:13px;padding:18px;overflow:auto;font:13px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace}
+.command .accent{color:#f2d778}.command .purple{color:#cdbdf0}
+.note{margin-top:17px;padding:14px 17px;background:var(--yellow2);border-left:4px solid var(--ink);border-radius:8px;font-size:14px}
+.demo-nav{display:flex;justify-content:space-between;margin-top:20px}
+.mini-btn{border:1.5px solid var(--ink);background:var(--paper2);border-radius:9px;padding:6px 12px;cursor:pointer}
+
+.dsl{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+pre{margin:0;white-space:pre-wrap}
+.code{padding:23px;background:#292722;color:#f8f1df;border-radius:var(--radius);font:13px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;box-shadow:var(--shadow)}
+.code .key{color:#cdbdf0}.code .str{color:#f2d778}.code .tag{color:#9bd0b0}
+.annotate{padding:23px}.annotate li{margin:12px 0}.mark{background:var(--yellow2);padding:1px 5px}
+
+.examples{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.example{padding:0;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;transition:.2s}
+.example:hover{transform:translateY(-5px)}
+.example-cover{height:210px;padding:25px;position:relative;background:var(--purple2);display:flex;flex-direction:column;justify-content:flex-end}
+.example:nth-child(2) .example-cover{background:var(--yellow2)}
+.example-cover:after{content:"";position:absolute;right:27px;top:25px;font-size:52px;filter:grayscale(.2)}
+.example-cover h3{font-size:26px;line-height:1.25;margin:0;max-width:75%}
+.example-body{padding:20px 22px}.meta{display:flex;gap:8px;flex-wrap:wrap}.meta span{font-size:11px;border:1px solid var(--line);border-radius:99px;padding:2px 8px;color:var(--muted)}
+.example-body p{font-size:14px;color:var(--muted);margin:12px 0 0}
+
+.interact{display:grid;grid-template-columns:.85fr 1.15fr;gap:20px}
+.character-list{padding:23px}
+.character{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line);cursor:pointer}
+.avatar{width:39px;height:39px;border:1.5px solid var(--ink);border-radius:50%;display:grid;place-items:center;background:var(--yellow2);font-weight:800}
+.character:last-child{border-bottom:0}
+.character-info small{display:block;color:var(--muted);font-size:11px}
+.character-info strong{font-size:14px}
+.character-card{padding:27px;min-height:300px;display:flex;flex-direction:column;justify-content:center}
+.character-card .big-avatar{font-size:50px;margin-bottom:10px}
+.character-card h3{font-size:28px;margin:0}
+.character-card p{color:var(--muted)}
+
+.cta{padding:65px 25px;text-align:center;background:var(--purple2);border:2px solid var(--ink);border-radius:25px;box-shadow:8px 8px 0 var(--ink)}
+.cta h2{font-size:40px}.cta p{color:var(--muted)}
+footer{padding:35px 0 55px;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;border-top:1px dashed var(--line)}
+
+@media(max-width:850px){
+ .hero-grid,.tutorial,.dsl,.interact{grid-template-columns:1fr}
+ .cards,.examples{grid-template-columns:1fr}
+ .flow{grid-template-columns:1fr}.flow-arrow{transform:rotate(90deg)}
+ .navlinks{display:none}.hero{padding-top:60px}h1{letter-spacing:-2px}
+}
+@media(max-width:520px){
+ section{padding:60px 0}.container{width:min(100% - 24px,var(--max))}
+ .hero p{font-size:16px}.stage{padding:17px}.demo{padding:18px}
+ footer{display:block}footer span{display:block;margin-top:8px}
+}
+</style>
+</head>
+
+<body>
+<header>
+  <div class="container nav">
+    <a class="logo" href="#">Mini<span>-Play</span></a>
+    <nav class="navlinks">
+      <a href="#why">理念</a><a href="#tutorial">教程</a><a href="#dsl">DSL</a><a href="#examples">示例</a>
+    </nav>
+    <a class="github" href="https://github.com/Canyon-Li/Mini-Play" target="_blank">GitHub ↗</a>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="doodle d1">← knowledge, but make it a play</div>
+  <div class="doodle d2">「剧本即源码」</div>
+  <div class="container hero-grid">
+    <div>
+      <span class="kicker">Claude Code Skill · YAML DSL · HTML</span>
+      <h1>把复杂概念<br>变成一场<em>小剧场</em></h1>
+      <p>Mini-Play 用角色、冲突和对话解释技术概念。不是把知识“讲一遍”，而是让概念在一场戏里自己出现。</p>
+      <div class="actions">
+        <a class="btn primary" href="#examples"> 浏览小剧场</a>
+        <a class="btn yellow" href="#tutorial">✦ 学会怎么用</a>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="stage-top"><span class="stage-title">🎬 第一幕：问题出现了</span><span class="dots"><i></i><i></i><i></i></span></div>
+      <div class="scene">
+        <div class="bubble left"><div class="role">产品经理</div>用户想用中文问“华北地区销售额”。</div>
+        <div class="bubble right"><div class="role">LLM · 困惑</div>我可以写 SQL，但……你数据库里有什么表？</div>
+        <div class="bubble left"><div class="role">元数据库</div>终于轮到我出场了。</div>
+      </div>
+      <div class="stage-foot">一个问题 → 一个冲突 → 一个概念</div>
+    </div>
+  </div>
+</section>
+
+<section id="why">
+<div class="container">
+  <div class="section-head"><div class="eyebrow">WHY MINI-PLAY?</div><h2>知识不一定要像说明书。</h2><p>把知识盲区、常见误区、方案之争写成角色冲突，让读者跟着剧情推进理解。</p></div>
+  <div class="cards">
+    <article class="paper card"><div class="num">01</div><h3>对话优于陈述</h3><p>不是直接告诉读者“为什么”，而是让角色因为不知道、误解或争论，自然逼出答案。</p><span class="arrow">↗</span></article>
+    <article class="paper card"><div class="num">02</div><h3>剧本即源码</h3><p>YAML 剧本是唯一真相。Markdown / HTML 都只是渲染产物，改剧本即可重新渲染。</p><span class="arrow">↗</span></article>
+    <article class="paper card"><div class="num">03</div><h3>交互保留上下文</h3><p>生成的 HTML 支持角色卡、旁白折叠、幕间导航与深色主题，让阅读本身也成为体验。</p><span class="arrow">↗</span></article>
+  </div>
+</div>
+</section>
+
+<section>
+<div class="container">
+  <div class="section-head"><div class="eyebrow">THE PIPELINE</div><h2>从一个主题，到一场戏。</h2></div>
+  <div class="flow">
+    <div class="flow-item"><strong>💡 主题</strong><small>RAG 重排序</small></div><div class="flow-arrow">→</div>
+    <div class="flow-item"><strong>📝 YAML</strong><small>角色 · 台词 · 幕</small></div><div class="flow-arrow">→</div>
+    <div class="flow-item"><strong>✓ 校验</strong><small>schema + lint</small></div>
+  </div>
+  <div class="flow" style="margin-top:10px">
+    <div class="flow-item"><strong>🎬 定稿</strong><small>剧本稳定</small></div><div class="flow-arrow">→</div>
+    <div class="flow-item"><strong>⚙ render.py</strong><small>渲染器</small></div><div class="flow-arrow">→</div>
+    <div class="flow-item"><strong>🌐 HTML</strong><small>单文件 · 离线可开</small></div>
+  </div>
+</div>
+</section>
+
+<section id="tutorial">
+<div class="container">
+  <div class="section-head"><div class="eyebrow">INTERACTIVE TUTORIAL</div><h2>三步，开始你的第一场戏。</h2><p>点击左边步骤，看看 Mini-Play 从“一个想法”怎样变成可交互的 HTML。</p></div>
+  <div class="tutorial">
+    <div class="steps">
+      <button class="step-btn active" data-step="0">01 · 提出主题</button>
+      <button class="step-btn" data-step="1">02 · 生成剧本</button>
+      <button class="step-btn" data-step="2">03 · 渲染 HTML</button>
+      <button class="step-btn" data-step="3">04 · 打开小剧场</button>
+    </div>
+    <div class="paper demo">
+      <div class="demo-head"><strong id="demoTitle">把一个问题交给 Mini-Play</strong><span class="pill" id="demoPill">mini-play</span></div>
+      <div class="demo-content" id="demoContent"></div>
+      <div class="demo-nav"><button class="mini-btn" id="prev">← 上一步</button><button class="mini-btn" id="next">下一步 →</button></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="dsl">
+<div class="container">
+  <div class="section-head"><div class="eyebrow">THE DSL</div><h2>一份 YAML，就是一份剧本。</h2><p>Mini-Play 把角色、分幕、台词、旁白、代码和谢幕总结变成结构化字段。</p></div>
+  <div class="dsl">
+    <div class="code"><pre><span class="key">title:</span> <span class="str">元数据知识库的诞生</span>
+<span class="key">scene:</span> <span class="str">一个 AI 项目小组的讨论</span>
+
+<span class="key">characters:</span>
+  - <span class="key">name:</span> <span class="str">LLM</span>
+    <span class="key">persona:</span> <span class="str">会写 SQL，但不知道数据库里有什么</span>
+
+<span class="key">acts:</span>
+  - <span class="key">title:</span> <span class="str">第一幕：没有知识库的时候</span>
+    <span class="key">beats:</span>
+      - <span class="key">type:</span> <span class="tag">line</span>
+        <span class="key">who:</span> <span class="str">LLM</span>
+        <span class="key">emotion:</span> <span class="str">困惑</span>
+        <span class="key">text:</span> <span class="str">你数据库里有什么表？</span>
+
+<span class="key">closing:</span>
+  <span class="key">thesis:</span> <span class="str">让知识在冲突中出现。</span></pre></div>
+    <div class="paper annotate">
+      <h3>它其实很像写剧本。</h3>
+      <ul>
+        <li><span class="mark">characters</span>：谁在这场戏里？</li>
+        <li><span class="mark">acts</span>：故事怎样一步步推进？</li>
+        <li><span class="mark">beats</span>：这一拍发生什么？</li>
+        <li><span class="mark">line</span>：谁说了什么？</li>
+        <li><span class="mark">aside</span>：旁白补充什么知识？</li>
+        <li><span class="mark">code</span>：需要展示哪段代码？</li>
+        <li><span class="mark">closing</span>：最后把知识收拢起来。</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="examples">
+<div class="container">
+  <div class="section-head"><div class="eyebrow">PLAYHOUSE</div><h2>来看看成品。</h2><p>下面的卡片可以直接链接到仓库中的小剧场 HTML。把 href 改成你的实际文件路径即可。</p></div>
+  <div class="examples">
+    <a class="paper example" href="./plays/元数据知识库的诞生.html">
+      <div class="example-cover"><h3>元数据知识库的诞生</h3></div>
+      <div class="example-body"><div class="meta"><span>8 个角色</span><span>构建阶段</span><span>三套索引</span></div><p>LLM 会写 SQL，却不知道数据库里有什么。一次围绕元数据知识库的讨论。</p></div>
+    </a>
+    <a class="paper example" href="./plays/LLM的12步喂饭之旅.html">
+      <div class="example-cover"><h3>LLM 的 12 步喂饭之旅</h3></div>
+      <div class="example-body"><div class="meta"><span>2 个角色</span><span>9 幕</span><span>查询阶段</span></div><p>从一次 Text2SQL 查询开始，跟着角色走完一趟完整的查询旅程。</p></div>
+    </a>
+  </div>
+</div>
+</section>
+
+<section>
+<div class="container">
+  <div class="section-head"><div class="eyebrow">TRY THE INTERACTION</div><h2>点一个角色，看看它是谁。</h2><p>这是对最终 HTML 交互的一个小型预览。</p></div>
+  <div class="interact">
+    <div class="paper character-list">
+      <div class="character" data-char="llm"><div class="avatar">L</div><div class="character-info"><strong>LLM</strong><small>会写 SQL，但不知道数据库里有什么</small></div></div>
+      <div class="character" data-char="pm"><div class="avatar">P</div><div class="character-info"><strong>产品经理</strong><small>提出业务问题的人</small></div></div>
+      <div class="character" data-char="db"><div class="avatar">M</div><div class="character-info"><strong>元数据库</strong><small>知道表结构与字段定义</small></div></div>
+    </div>
+    <div class="paper character-card" id="characterCard">
+      <div class="big-avatar">👀</div><h3>点左边的人物</h3><p>真正的小剧场 HTML 会把人设、别名、背景和登场幕次放进角色卡里。</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<section>
+<div class="container">
+  <div class="cta">
+    <h2>准备好让一个概念“演出来”了吗？</h2>
+    <p>安装两个 skill：<code>mini-play</code> 负责创作，<code>mini-play-render</code> 负责渲染。</p>
+    <div class="actions" style="justify-content:center">
+      <a class="btn primary" href="https://github.com/Canyon-Li/Mini-Play" target="_blank">打开 GitHub ↗</a>
+      <a class="btn yellow" href="#tutorial">再看一遍教程 ↑</a>
+    </div>
+  </div>
+</div>
+</section>
+</main>
+
+<footer class="container">
+  <span>Mini-Play · MIT License</span>
+  <span>把知识写成戏，把理解留在剧情里。</span>
+</footer>
+
+<script>
+const demos=[
+ {title:"把一个问题交给 Mini-Play",pill:"mini-play",html:`<p>比如你想解释 <strong>“RAG 检索中的重排序”</strong>。</p><div class="command"><span class="purple">/mini-play</span> RAG 检索中的重排序</div><div class="note">💡 不需要先设计角色。先告诉 Mini-Play 你想解释什么。</div>`},
+ {title:"Mini-Play 生成结构化剧本",pill:"YAML DSL",html:`<p>生成的不是一篇散文，而是一份可以继续校验、修改和渲染的剧本。</p><div class="command"><span class="accent">characters:</span><br>&nbsp;&nbsp;- name: LLM<br>&nbsp;&nbsp;&nbsp;&nbsp;persona: 会写 SQL，但不知道数据库结构<br><br><span class="accent">acts:</span><br>&nbsp;&nbsp;- title: 第一幕<br>&nbsp;&nbsp;&nbsp;&nbsp;beats:</div><div class="note">✦ 剧本是源码，Markdown / HTML 都是产物。</div>`},
+ {title:"用 render 把剧本变成 HTML",pill:"mini-play-render",html:`<p>剧本定稿后，直接渲染成单文件 HTML。</p><div class="command"><span class="purple">/mini-play-render html</span> &lt;剧本路径&gt;</div><div class="note">✓ HTML 内联 CSS / JS，可以直接离线打开。</div>`},
+ {title:"进入真正的小剧场",pill:"HTML",html:`<p>最终页面可以有角色卡、旁白折叠、幕间导航和深色主题。</p><div class="bubble left"><div class="role">LLM · 困惑</div>我可以写 SQL，但……你数据库里有什么表？</div><div class="bubble right"><div class="role">元数据库</div>我知道。让我告诉你。</div><div class="note"> 现在，概念已经不再是一段说明，而是一场戏。</div>`}
+];
+let current=0;
+const title=document.querySelector("#demoTitle"),pill=document.querySelector("#demoPill"),content=document.querySelector("#demoContent");
+function renderDemo(){title.textContent=demos[current].title;pill.textContent=demos[current].pill;content.innerHTML=demos[current].html;document.querySelectorAll(".step-btn").forEach((b,i)=>b.classList.toggle("active",i===current))}
+renderDemo();
+document.querySelectorAll(".step-btn").forEach(b=>b.onclick=()=>{current=+b.dataset.step;renderDemo()});
+document.querySelector("#next").onclick=()=>{current=Math.min(3,current+1);renderDemo()};
+document.querySelector("#prev").onclick=()=>{current=Math.max(0,current-1);renderDemo()};
+
+const chars={
+ llm:{emoji:"🤖",name:"LLM",text:"会写 SQL，但上下文窗口有限，也不知道数据库里的表和字段。它需要知识才能可靠地生成查询。"},
+ pm:{emoji:"🧑‍💼",name:"产品经理",text:"从真实业务问题出发：用户想知道“华北地区销售额”，但不关心数据库内部长什么样。"},
+ db:{emoji:"🗃️",name:"元数据库",text:"保存表结构、字段定义等元数据，为 LLM 提供“数据库长什么样”的知识。"}
+};
+document.querySelectorAll(".character").forEach(el=>el.onclick=()=>{
+ const c=chars[el.dataset.char];
+ document.querySelector("#characterCard").innerHTML=`<div class="big-avatar">${c.emoji}</div><h3>${c.name}</h3><p>${c.text}</p>`;
+});
+
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener("click",e=>{
+ const target=document.querySelector(a.getAttribute("href"));if(target){e.preventDefault();target.scrollIntoView({behavior:"smooth"})}
+}));
+</script>
+</body>
+</html>
