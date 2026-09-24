@@ -5,177 +5,230 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ play.title }}</title>
 <style>
-  :root {
-    --bg: #fafafa;
-    --fg: #2c2c2c;
-    --muted: #666;
-    --accent: #4a90e2;
-    --aside-bg: #fff8e1;
-    --aside-border: #ffb300;
-    --warn-bg: #fdecea;
-    --warn-border: #e53935;
-    --insight-bg: #e8f5e9;
-    --insight-border: #43a047;
-    --card-bg: #ffffff;
-    --border: #e0e0e0;
+  :root{
+    --paper:#f7f1e5; --paper2:#fffaf0; --ink:#282522; --muted:#70695f;
+    --purple:#8e7bb8; --purple2:#e9e1f2; --yellow:#f2d778; --yellow2:#fff2b8;
+    --line:#d8cdbb; --bubble:#ffffff; --codebg:#292722; --codefg:#f8f1df;
+    --hand:"Ma Shan Zheng","Kaiti SC",KaiTi,STKaiti,cursive;
   }
-  body.theme-dark {
-    --bg: #1a1a1a;
-    --fg: #e8e8e8;
-    --muted: #999;
-    --accent: #64b5f6;
-    --aside-bg: #3d3517;
-    --aside-border: #ffb300;
-    --warn-bg: #4a201f;
-    --warn-border: #e53935;
-    --insight-bg: #1f3d22;
-    --insight-border: #43a047;
-    --card-bg: #2a2a2a;
-    --border: #444;
+  body.theme-dark{
+    --paper:#262019; --paper2:#2d271f; --ink:#eee6d8; --muted:#a89e8d;
+    --purple:#b7a8da; --purple2:#3c3449; --yellow:#d9c069; --yellow2:#453c22;
+    --line:#4a4234; --bubble:#332c23; --codebg:#1c1812;
   }
-  body {
-    background: var(--bg);
-    color: var(--fg);
-    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    line-height: 1.75;
-    max-width: 820px;
-    margin: 0 auto;
-    padding: 32px 24px 96px;
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;color:var(--ink);
+    font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:
+      radial-gradient(circle at 10% 10%,rgba(142,123,184,.08) 0 2px,transparent 3px),
+      radial-gradient(circle at 80% 30%,rgba(242,215,120,.10) 0 2px,transparent 3px),
+      var(--paper);
+    background-size:29px 29px,37px 37px,auto;
+    line-height:1.75;
   }
-  h1 { font-size: 1.8em; border-bottom: 2px solid var(--accent); padding-bottom: 8px; }
-  h2 { font-size: 1.4em; margin-top: 2.5em; color: var(--accent); }
-  .scene { color: var(--muted); font-style: italic; padding: 8px 16px; border-left: 3px solid var(--accent); background: var(--card-bg); }
-  .act-separator { text-align: center; color: var(--muted); margin: 2em 0; letter-spacing: 8px; }
-  .line { margin: 12px 0; padding: 12px 16px; background: var(--card-bg); border-radius: 6px; border-left: 3px solid var(--border); }
-  .line .speaker { font-weight: bold; color: var(--accent); cursor: pointer; }
-  .line .speaker:hover { text-decoration: underline; }
-  .line .emotion { color: var(--muted); font-size: 0.9em; }
-  .line .text { display: block; margin-top: 6px; white-space: pre-wrap; }
-  .thought { color: var(--muted); font-style: italic; padding: 8px 16px; border-left: 3px dashed var(--border); margin: 12px 0; }
-  .stage-direction { color: var(--muted); font-style: italic; padding: 8px 0; }
-  .stage-direction .label { font-weight: bold; color: var(--fg); font-style: normal; }
-  aside.note, aside.warning, aside.insight {
-    display: block; padding: 10px 16px; margin: 12px 0; border-radius: 4px;
-    border-left: 3px solid var(--aside-border); background: var(--aside-bg);
+  .wrap{max-width:860px;margin:0 auto;padding:46px 24px 70px}
+
+  .kicker{display:inline-block;background:var(--yellow2);border:1.5px solid var(--ink);
+    padding:3px 12px;border-radius:5px;transform:rotate(-1.5deg);font-size:13px;
+    font-weight:700;box-shadow:2px 2px 0 var(--ink)}
+  h1{font-size:clamp(34px,6vw,54px);line-height:1.15;margin:24px 0 10px;letter-spacing:-1px}
+  .scene{color:var(--muted);font-size:16px;padding:4px 0 16px;
+    border-bottom:1.5px dashed var(--line);margin-bottom:26px}
+
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+  .nav a{font-size:13px;border:1px solid var(--line);border-radius:99px;padding:3px 12px;
+    color:var(--muted);text-decoration:none;background:var(--paper2)}
+  .nav a:hover{border-color:var(--ink);color:var(--ink)}
+
+  .stage{background:var(--paper2);border:2px solid var(--ink);border-radius:25px;
+    box-shadow:9px 10px 0 var(--purple);padding:22px 26px;margin:38px 0;
+    transform:rotate(-.35deg)}
+  section.stage:nth-of-type(even){transform:rotate(.35deg)}
+  .stage-top{display:flex;justify-content:space-between;align-items:center;
+    border-bottom:1.5px dashed var(--line);padding-bottom:12px;margin-bottom:16px}
+  .stage-title{font-weight:800;font-size:18px}
+  .dots{display:flex;gap:5px}
+  .dots i{width:8px;height:8px;border:1.5px solid var(--ink);border-radius:50%}
+  .act-scene{font-size:13px;color:var(--muted);font-style:italic;margin:0 0 10px}
+
+  .line{display:flex;gap:12px;align-items:flex-start;margin:14px 0}
+  .avatar{flex:none;width:36px;height:36px;border:1.5px solid var(--ink);border-radius:50%;
+    display:grid;place-items:center;background:var(--yellow2);font-weight:800;
+    font-size:15px;cursor:pointer;margin-top:5px;transition:.18s}
+  .avatar:hover{background:var(--purple2);transform:rotate(-6deg)}
+  .bubble{background:var(--bubble);border:1.5px solid var(--ink);border-radius:16px 16px 16px 4px;
+    padding:10px 16px;box-shadow:3px 3px 0 rgba(40,37,34,.12);max-width:88%}
+  .role{font-size:12px;font-weight:800;color:var(--purple);margin-bottom:2px}
+  .role .speaker{cursor:pointer}
+  .role .speaker:hover{text-decoration:underline}
+  .role .emotion{color:var(--muted)}
+  .text{white-space:pre-wrap}
+
+  .thought{border:1.5px dashed var(--ink);background:var(--paper2);border-radius:14px;
+    padding:10px 16px;margin:14px 0 14px 48px;color:var(--muted);font-style:italic}
+  .thought .who{font-family:var(--hand);color:var(--purple);font-style:normal}
+
+  .stage-direction{text-align:center;color:var(--muted);font-style:italic;
+    font-size:14px;margin:14px 0;padding:0 20px}
+  .stage-direction .label{font-weight:700;color:var(--ink);font-style:normal}
+
+  details.aside-collapse{margin:14px 0 14px 48px}
+  details.aside-collapse>summary{cursor:pointer;font-weight:700;color:var(--purple);
+    list-style:none;font-size:14px}
+  details.aside-collapse>summary::before{content:"▸ ";display:inline-block;transition:.2s}
+  details.aside-collapse[open]>summary::before{transform:rotate(90deg)}
+  details.aside-collapse[open]>summary{margin-bottom:8px}
+  aside.note,aside.warning,aside.insight{padding:12px 16px;border-radius:9px;
+    border-left:4px solid var(--ink);font-size:14.5px;margin:8px 0 14px 48px}
+  aside.note{background:var(--yellow2)}
+  aside.warning{background:var(--yellow)}
+  aside.insight{background:var(--purple2)}
+  aside .tag{font-weight:800;margin-right:6px}
+
+  .code-title{font-size:12px;font-weight:800;color:var(--purple);margin:16px 0 4px 48px}
+  pre{margin:6px 0 18px 48px;background:var(--codebg);color:var(--codefg);border-radius:13px;
+    padding:16px 18px;overflow-x:auto;font:13px/1.75 ui-monospace,Consolas,monospace}
+  pre code{font-family:inherit}
+  :not(pre)>code{background:var(--yellow2);padding:1px 6px;border-radius:4px;
+    font-size:.92em;font-family:Consolas,ui-monospace,monospace}
+
+  .transition{text-align:center;font-family:var(--hand);color:var(--purple);
+    font-size:20px;margin:22px 0;letter-spacing:4px}
+
+  h2.closing{font-size:30px;margin:54px 0 20px}
+  .paper{background:var(--paper2);border:1.5px solid var(--line);border-radius:20px;
+    box-shadow:5px 6px 0 rgba(40,37,34,.09);overflow:hidden}
+  table{border-collapse:collapse;width:100%;font-size:14.5px}
+  th{background:var(--yellow2);border-bottom:1.5px solid var(--ink);
+    padding:10px 14px;text-align:left;font-size:13px}
+  td{border-bottom:1px dashed var(--line);padding:10px 14px}
+  .thesis{display:inline-block;margin-top:22px;background:var(--yellow2);
+    padding:6px 14px;border-radius:6px;transform:rotate(-.5deg);font-size:18px;
+    font-weight:700;box-shadow:3px 3px 0 rgba(40,37,34,.12)}
+
+  .character-card{position:fixed;inset:0;background:rgba(40,37,34,.45);
+    display:none;align-items:center;justify-content:center;z-index:100}
+  .character-card.open{display:flex}
+  .panel{background:var(--paper2);border:2px solid var(--ink);border-radius:22px;
+    box-shadow:9px 10px 0 var(--purple);padding:28px;max-width:440px;width:90%}
+  .big-avatar{width:54px;height:54px;border:2px solid var(--ink);border-radius:50%;
+    display:grid;place-items:center;background:var(--yellow2);font-weight:800;
+    font-size:22px;margin-bottom:10px}
+  .panel h3{margin:0 0 4px;font-size:26px}
+  .panel .persona{color:var(--purple);font-size:14px;font-style:italic;margin:0 0 14px}
+  .panel dt{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:1px;margin-top:12px}
+  .panel dd{margin:3px 0 0}
+  .meta-pills{display:flex;gap:6px;flex-wrap:wrap}
+  .meta-pills span{font-size:11px;border:1px solid var(--line);border-radius:99px;
+    padding:2px 9px;color:var(--muted);background:var(--bubble)}
+  .close{margin-top:22px;border:1.5px solid var(--ink);background:var(--yellow2);
+    border-radius:10px;padding:7px 16px;cursor:pointer;font-weight:700;
+    box-shadow:3px 3px 0 var(--ink);transition:.18s;font-size:14px}
+  .close:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+
+  footer{margin-top:60px;padding-top:18px;border-top:1.5px dashed var(--line);
+    color:var(--muted);font-size:14px;text-align:center;font-family:var(--hand)}
+
+  @media(max-width:640px){
+    .wrap{padding:30px 16px 50px}
+    .stage{padding:16px;border-radius:18px}
+    .bubble{max-width:100%}
+    .thought,details.aside-collapse,aside.note,aside.warning,aside.insight,
+    pre,.code-title{margin-left:0}
   }
-  aside.warning { border-left-color: var(--warn-border); background: var(--warn-bg); }
-  aside.insight { border-left-color: var(--insight-border); background: var(--insight-bg); }
-  aside .tag { font-weight: bold; margin-right: 6px; }
-  pre { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; overflow-x: auto; }
-  code { font-family: "JetBrains Mono", Consolas, monospace; }
-  pre code { background: none; padding: 0; }
-  :not(pre) > code { background: var(--card-bg); padding: 2px 6px; border-radius: 3px; font-size: 0.92em; }
-  .code-title { font-weight: bold; margin-bottom: 4px; }
-  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
-  th, td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
-  th { background: var(--card-bg); font-weight: bold; }
-  .thesis { font-size: 1.1em; font-weight: bold; margin-top: 16px; padding: 12px 16px; background: var(--card-bg); border-left: 4px solid var(--accent); }
-  .character-card {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-    display: none; align-items: center; justify-content: center; z-index: 100;
-  }
-  .character-card.open { display: flex; }
-  .character-card .panel {
-    background: var(--card-bg); color: var(--fg); padding: 24px;
-    border-radius: 8px; max-width: 480px; width: 90%; box-shadow: 0 12px 32px rgba(0,0,0,0.3);
-  }
-  .character-card h3 { margin: 0 0 4px; color: var(--accent); }
-  .character-card .persona { color: var(--muted); margin: 0 0 16px; font-style: italic; }
-  .character-card dl { margin: 0; }
-  .character-card dt { font-weight: bold; margin-top: 12px; }
-  .character-card dd { margin: 4px 0 0 0; }
-  .character-card .close { margin-top: 20px; padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 1em; }
-  .character-card .aliases { color: var(--muted); font-size: 0.9em; }
-  details.aside-collapse { margin: 12px 0; }
-  details.aside-collapse > summary { cursor: pointer; font-weight: bold; color: var(--accent); list-style: none; }
-  details.aside-collapse > summary::before { content: "▶ "; font-size: 0.8em; transition: transform 0.2s; display: inline-block; }
-  details.aside-collapse[open] > summary::before { transform: rotate(90deg); }
-  details.aside-collapse[open] > summary { margin-bottom: 8px; }
-  .nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 32px; }
-  .nav a { padding: 4px 10px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; text-decoration: none; color: var(--fg); font-size: 0.9em; }
-  .nav a:hover { border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body class="theme-{{ play.render_meta.html.theme }}">
 
-<h1>{{ play.title }}</h1>
-<div class="scene">场景：{{ play.scene }}</div>
+<div class="wrap">
+  <span class="kicker">Mini-Play 剧本</span>
+  <h1>{{ play.title }}</h1>
+  <p class="scene">📍 场景：{{ play.scene }}</p>
 
-<nav class="nav">
-  {% for act in play.acts %}
-  <a href="#act-{{ loop.index0 }}">{{ act.title }}</a>
-  {% endfor %}
-  <a href="#closing">谢幕</a>
-</nav>
+  <nav class="nav">
+    {% for act in play.acts %}
+    <a href="#act-{{ loop.index0 }}">{{ act.title }}</a>
+    {% endfor %}
+    <a href="#closing">谢幕总结</a>
+  </nav>
 
-<div id="character-card" class="character-card" onclick="if(event.target===this)closeCard()">
-  <div class="panel">
-    <h3 id="card-name"></h3>
-    <p class="persona" id="card-persona"></p>
-    <dl>
-      <dt class="aliases">别名</dt><dd id="card-aliases"></dd>
-      <dt>背景</dt><dd id="card-backstory"></dd>
-      <dt>登场幕次</dt><dd id="card-appearances"></dd>
-    </dl>
-    <button class="close" onclick="closeCard()">关闭</button>
+  <div id="character-card" class="character-card" onclick="if(event.target===this)closeCard()">
+    <div class="panel">
+      <div class="big-avatar" id="card-avatar"></div>
+      <h3 id="card-name"></h3>
+      <p class="persona" id="card-persona"></p>
+      <dl>
+        <dt>别名</dt><dd id="card-aliases"></dd>
+        <dt>背景</dt><dd id="card-backstory"></dd>
+        <dt>登场幕次</dt><dd class="meta-pills" id="card-appearances"></dd>
+      </dl>
+      <button class="close" onclick="closeCard()">合上角色卡</button>
+    </div>
   </div>
-</div>
 
-{% for act in play.acts %}
-<h2 id="act-{{ loop.index0 }}">{{ act.title }}</h2>
-{% if act.scene %}<div class="scene">场景：{{ act.scene }}</div>{% endif %}
+  {% for act in play.acts %}
+  <section class="stage" id="act-{{ loop.index0 }}">
+    <div class="stage-top">
+      <span class="stage-title">🎬 {{ act.title }}</span>
+      <span class="dots"><i></i><i></i><i></i></span>
+    </div>
+    {% if act.scene %}<p class="act-scene">（{{ act.scene }}）</p>{% endif %}
 
-{% for beat in act.beats %}
-{% if beat.type == "line" %}
-<div class="line">
-  <span class="speaker" onclick="showCard('{{ beat.who }}')">{{ beat.who }}</span>{% if beat.emotion %}<span class="emotion">（{{ beat.emotion.value }}）</span>{% endif %}：
-  <span class="text">{{ beat.text | trim }}</span>
-</div>
-{% elif beat.type == "thought" %}
-<div class="thought">
-  <strong>{{ beat.who }}（心里）：</strong><br>
-  {{ beat.text | trim }}
-</div>
-{% elif beat.type == "stage_direction" %}
-<div class="stage-direction">
-  {% if beat.label %}<span class="label">{{ beat.label }}：</span>{% endif %}{{ beat.text | trim }}
-</div>
-{% elif beat.type == "aside" %}
-{% if play.render_meta.html.aside_collapse_default %}
-<details class="aside-collapse">
-  <summary>{% if beat.variant.value == "insight" %}为什么需要这步{% elif beat.variant.value == "warning" %}注意{% else %}注释{% endif %}</summary>
-  <aside class="{{ beat.variant.value }}">{{ beat.text | trim }}</aside>
-</details>
-{% else %}
-<aside class="{{ beat.variant.value }}">
-  <span class="tag">{% if beat.variant.value == "insight" %}为什么需要这步{% elif beat.variant.value == "warning" %}注意{% else %}注释{% endif %}</span>{{ beat.text | trim }}
-</aside>
-{% endif %}
-{% elif beat.type == "code" %}
-{% if beat.title %}<div class="code-title">{{ beat.title }}</div>{% endif %}
-<pre><code class="language-{{ beat.lang }}">{{ beat.text | trim_end }}</code></pre>
-{% elif beat.type == "transition" %}
-<hr>
-<p class="stage-direction"><em>{{ beat.text | trim }}</em></p>
-{% endif %}
-{% endfor %}
-{% if not loop.last %}
-<div class="act-separator">• • •</div>
-{% endif %}
-{% endfor %}
-
-<h2 id="closing">谢幕总结</h2>
-{% if play.closing.table %}
-<table>
-  <thead><tr>{% for h in play.closing.table.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
-  <tbody>
-  {% for row in play.closing.table.rows %}
-  <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+    {% for beat in act.beats %}
+    {% if beat.type == "line" %}
+    <div class="line">
+      <span class="avatar" onclick="showCard('{{ beat.who }}')">{{ beat.who[0] }}</span>
+      <div class="bubble">
+        <div class="role"><span class="speaker" onclick="showCard('{{ beat.who }}')">{{ beat.who }}</span>{% if beat.emotion %} · <span class="emotion">{{ beat.emotion.value }}</span>{% endif %}</div>
+        <div class="text">{{ beat.text | trim }}</div>
+      </div>
+    </div>
+    {% elif beat.type == "thought" %}
+    <div class="thought"><span class="who">{{ beat.who }}（心里）</span>：{{ beat.text | trim }}</div>
+    {% elif beat.type == "stage_direction" %}
+    <div class="stage-direction">
+      （{% if beat.label %}<span class="label">{{ beat.label }}：</span>{% endif %}{{ beat.text | trim }}）
+    </div>
+    {% elif beat.type == "aside" %}
+    {% if play.render_meta.html.aside_collapse_default %}
+    <details class="aside-collapse">
+      <summary>{% if beat.variant.value == "insight" %}💡 为什么需要这步{% elif beat.variant.value == "warning" %}⚠️ 注意{% else %}📌 注释{% endif %}</summary>
+      <aside class="{{ beat.variant.value }}"><span class="tag">{% if beat.variant.value == "insight" %}💡 为什么需要这步{% elif beat.variant.value == "warning" %}⚠️ 注意{% else %}📌 注释{% endif %}</span>{{ beat.text | trim }}</aside>
+    </details>
+    {% else %}
+    <aside class="{{ beat.variant.value }}">
+      <span class="tag">{% if beat.variant.value == "insight" %}💡 为什么需要这步{% elif beat.variant.value == "warning" %}⚠️ 注意{% else %}📌 注释{% endif %}</span>{{ beat.text | trim }}
+    </aside>
+    {% endif %}
+    {% elif beat.type == "code" %}
+    {% if beat.title %}<div class="code-title">✎ {{ beat.title }}</div>{% endif %}
+    <pre><code class="language-{{ beat.lang }}">{{ beat.text | trim_end }}</code></pre>
+    {% elif beat.type == "transition" %}
+    <div class="transition">～ {{ beat.text | trim }} ～</div>
+    {% endif %}
+    {% endfor %}
+  </section>
   {% endfor %}
-  </tbody>
-</table>
-{% endif %}
-<div class="thesis">{{ play.closing.thesis | trim }}</div>
+
+  <h2 class="closing" id="closing">谢幕总结</h2>
+  {% if play.closing.table %}
+  <div class="paper">
+    <table>
+      <thead><tr>{% for h in play.closing.table.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+      <tbody>
+      {% for row in play.closing.table.rows %}
+      <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  <div><span class="thesis">✒ {{ play.closing.thesis | trim }}</span></div>
+
+  <footer>✦ 由 Mini-Play 渲染 · 剧本即源码，HTML 只是产物</footer>
+</div>
 
 <script>
   const characters = {
@@ -192,11 +245,19 @@
   function showCard(name) {
     const ch = characters[name];
     if (!ch) return;
+    document.getElementById('card-avatar').textContent = name[0];
     document.getElementById('card-name').textContent = name;
     document.getElementById('card-persona').textContent = ch.persona;
     document.getElementById('card-aliases').textContent = ch.aliases.length ? ch.aliases.join('、') : '（无）';
     document.getElementById('card-backstory').textContent = ch.backstory;
-    document.getElementById('card-appearances').textContent = ch.appearances.length ? ch.appearances.join('、') : '（未登场）';
+    const wrap = document.getElementById('card-appearances');
+    wrap.innerHTML = '';
+    const acts = ch.appearances.length ? ch.appearances : ['（未登场）'];
+    acts.forEach(a => {
+      const s = document.createElement('span');
+      s.textContent = a;
+      wrap.appendChild(s);
+    });
     document.getElementById('character-card').classList.add('open');
   }
   function closeCard() {
