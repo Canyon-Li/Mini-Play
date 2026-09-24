@@ -10,7 +10,7 @@
 ![CI](https://github.com/Canyon-Li/Mini-Play/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/License-MIT-16A34A)
 
-[简介](#这是什么) · [理念](#核心理念) · [工作流](#工作流) · [安装](#安装) · [快速开始](#快速开始) · [DSL](#dsl-一瞥) · [示例](#示例剧本) · [CLI](#渲染器-cli) · [边界](#设计边界)
+[简介](#这是什么) · [理念](#核心理念) · [工作流](#工作流) · [安装](#安装) · [快速开始](#快速开始) · [DSL](#dsl-示例) · [示例](#示例剧本) · [CLI](#渲染器-cli) · [边界](#设计边界)
 
 ![screenshot](docs/screenshot.png)
 
@@ -158,6 +158,14 @@ closing:
 - 点击角色名弹出**角色卡**（人设 / 别名 / 背景 / 登场幕次）
 - 旁白（note / warning / insight）默认折叠，不打断剧情
 - 幕间导航、深色主题（`render_meta.html.theme: dark`）
+
+点击角色名弹出的角色卡（登场幕次一目了然）：
+
+![character card](docs/screenshot-card.png)
+
+旁白默认折叠，点开再看，不打断剧情：
+
+![aside collapse](docs/screenshot-aside.png)
 
 ## 渲染器 CLI
 
